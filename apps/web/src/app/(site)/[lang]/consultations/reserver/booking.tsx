@@ -70,7 +70,7 @@ function downloadIcs(c: Consultation) {
   setTimeout(() => URL.revokeObjectURL(a.href), 1000);
 }
 
-export function Booking({ initialOffer, readingId: initialReading }: { initialOffer?: string; readingId?: string }) {
+export function Booking({ initialOffer, readingId: initialReading, initialQuestion }: { initialOffer?: string; readingId?: string; initialQuestion?: string }) {
   const { token, user, ready, refresh } = useAuth();
   const offers = useApi<Offer[]>('/offers');
   const [to] = useState(() => new Date(Date.now() + 60 * 86_400_000).toISOString());
@@ -80,7 +80,7 @@ export function Booking({ initialOffer, readingId: initialReading }: { initialOf
   const [code, setCode] = useState<string | undefined>(initialOffer);
   const [written, setWritten] = useState(false); // consultation offerte : par écrit
   const [slotId, setSlotId] = useState<string | null>(null);
-  const [question, setQuestion] = useState('');
+  const [question, setQuestion] = useState(initialQuestion ?? '');
   const [context, setContext] = useState('');
   const [readingId, setReadingId] = useState<string | undefined>(initialReading);
   const [consent, setConsent] = useState(false);

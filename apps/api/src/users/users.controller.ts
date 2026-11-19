@@ -1,9 +1,16 @@
-import { Body, Controller, Delete, Get, NotFoundException, Patch } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Delete, Get, NotFoundException, Patch, Put } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { v2 as cloudinary } from 'cloudinary';
 import { IsOptional, IsString, MaxLength } from 'class-validator';
 import { publicUser } from '../auth/auth.service';
 import { Auth, CurrentUser, JwtUser } from '../common/auth';
 import { PrismaService } from '../common/prisma.service';
 import { UsersService } from './users.service';
+
+class AvatarDto { @IsString() @MaxLength(500) url!: string }
+
+/** Refonte §7 : photo de profil, recadrée en carré sur le visage par Cloudinary (transformation imposée par la signature). */
+const AVATAR = { folder: 'ifaolade/avatars', transformation: 'c_fill,g_face,w_400,h_400', allowed_formats: 'jpg,jpeg,png,webp' };
 
 class UpdateMeDto {
   @IsOptional() @IsString() @MaxLength(80) firstName?: string;
@@ -16,7 +23,31 @@ class UpdateMeDto {
 @Auth()
 @Controller('me')
 export class UsersController {
-  constructor(private prisma: PrismaService, private users: UsersService) {}
+  constructor(private prisma: PrismaService, private users: UsersService, private cfg: ConfigService) {}
+
+  @Get('avatar/signature')
+  avatarSignature() {
+    const secret = this.cfg.get<string>('CLOUDINARY_API_SECRET');
+    const apiKey = this.cfg.get<string>('CLOUDINARY_API_KEY');
+    const cloudName = this.cfg.get<string>('CLOUDINARY_CLOUD_NAME');
+    if (!secret || !apiKey || !cloudName) throw new BadRequestException('Envoi de photo indisponible pour le moment.');
+    const params = { ...AVATAR, timestamp: Math.round(Date.now() / 1000) };
+    return { ...params, signature: cloudinary.utils.api_sign_request(params, secret), apiKey, cloudName };
+  }
+
+  @Put('avatar')
+  async setAvatar(@CurrentUser() u: JwtUser, @Body() dto: AvatarDto) {
+    const cloud = this.cfg.get<string>('CLOUDINARY_CLOUD_NAME');
+    if (!cloud || !dto.url.startsWith(`https://res.cloudinary.com/${cloud}/image/upload/`) || !dto.url.includes('/ifaolade/avatars/')) {
+      throw new BadRequestException('Photo refusée.');
+    }
+    return publicUser(await this.prisma.user.update({ where: { id: u.sub }, data: { avatarUrl: dto.url } }));
+  }
+
+  @Delete('avatar')
+  async removeAvatar(@CurrentUser() u: JwtUser) {
+    return publicUser(await this.prisma.user.update({ where: { id: u.sub }, data: { avatarUrl: null } }));
+  }
 
   @Get()
   async me(@CurrentUser() u: JwtUser) {

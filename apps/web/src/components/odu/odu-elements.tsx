@@ -4,9 +4,10 @@ import { cn } from '@/lib/cn';
 
 const COLORS: Record<string, string> = { fire: 'bg-fire', air: 'bg-air', water: 'bg-water', earth: 'bg-earth' };
 
-/** Les 4 positions d'une jambe (Iná, Afẹ́fẹ́, Omi, Ilẹ̀) : 0, 1 ou 2 marques actives (plan §11.1, à valider). */
-export function OduElements({ elements, lang = 'fr' }: { elements: Odu['elements']; lang?: Lang }) {
-  const d = getDict(lang).odu;
+/** Les 4 positions d'une jambe (Iná, Afẹ́fẹ́, Omi, Ilẹ̀) : 0, 1 ou 2 marques actives (plan §11.1). Libellés modifiables dans l'admin (REFONTE §8.5). */
+export function OduElements({ elements, lang = 'fr', labels }: { elements: Odu['elements']; lang?: Lang; labels?: { manifest?: string; balance?: string; latent?: string } }) {
+  const base = getDict(lang).odu;
+  const d = { manifest: labels?.manifest || base.manifest, balance: labels?.balance || base.balance, latent: labels?.latent || base.latent };
   return (
     <div className="space-y-3">
       {elements.map((e) => (

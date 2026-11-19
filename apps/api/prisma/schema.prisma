@@ -24,6 +24,7 @@ model User {
   phone         String?
   country       String?
   city          String?
+  avatarUrl     String?   @db.VarChar(500)
   role          Role      @default(CLIENT)
   emailVerified Boolean   @default(false)
   emailToken    String?
@@ -430,4 +431,39 @@ model RefreshToken {
   createdAt DateTime  @default(now())
 
   @@index([userId])
+}
+
+/// Refonte §8.1 : images de la vitrine, remplaçables depuis l'admin (Cloudinary).
+model SiteImage {
+  key       String   @id @db.VarChar(80)
+  url       String   @db.VarChar(500)
+  alt       String?  @db.VarChar(200)
+  credit    String?  @db.VarChar(200)
+  updatedAt DateTime @updatedAt
+}
+
+/// Refonte §8.2 : babaláwo présentés sur la vitrine. Seul ce qui est saisi est affiché.
+model Practitioner {
+  id            String   @id @default(cuid())
+  name          String   @db.VarChar(120)
+  title         String?  @db.VarChar(160)
+  lineage       String?  @db.VarChar(200)
+  initiatedYear Int?
+  languages     String?  @db.VarChar(160)
+  bio           String?  @db.Text
+  photoUrl      String?  @db.VarChar(500)
+  order         Int      @default(0)
+  active        Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+/// Refonte §8.4 : textes de mise en avant de la vitrine, par langue. Vide = texte du dictionnaire.
+model SiteText {
+  key       String   @db.VarChar(80)
+  locale    String   @db.VarChar(5)
+  value     String   @db.Text
+  updatedAt DateTime @updatedAt
+
+  @@id([key, locale])
 }

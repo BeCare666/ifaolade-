@@ -1,17 +1,19 @@
 'use client';
 
 import {
-  BookOpen, CalendarClock, CalendarRange, ExternalLink, Film, FolderKanban, Inbox, LayoutDashboard, LogOut, Menu,
-  History, MessageCircleReply, MessageSquareText, PlaneTakeoff, Search, Settings, Sparkles, Ticket, Users, Wallet, X,
+  BookOpen, CalendarClock, CalendarRange, ChevronDown, ExternalLink, Film, FolderKanban, Image as ImageIcon, Inbox, LayoutDashboard, LogOut, Menu,
+  History, MessageCircleReply, MessageSquareText, PlaneTakeoff, Search, Settings, Share2, Sparkles, Ticket, Type, UserRound, Users, Wallet, X,
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { BrandMark } from '@/components/site/header';
+import { Logo } from '@/components/brand/logo';
+import { Adire } from '@/components/brand/patterns';
 import { IconButton } from '@/components/ui/button';
 import { Drawer, Modal } from '@/components/ui/overlay';
 import { NotificationsBell } from '@/components/ui/notifications-bell';
-import { Avatar, EmptyState, Skeleton } from '@/components/ui/primitives';
+import { EmptyState, Skeleton } from '@/components/ui/primitives';
+import { UserAvatar } from '@/components/ui/user-avatar';
 import { useAuth } from '@/lib/auth';
 import { cn } from '@/lib/cn';
 import { useRequireAuth } from '@/lib/use-api';
@@ -56,6 +58,15 @@ export const ADMIN_GROUPS: { title?: string; links: NavLink[] }[] = [
     ],
   },
   {
+    title: 'Apparence',
+    links: [
+      { href: '/admin/apparence/images', label: 'Images du site', icon: ImageIcon },
+      { href: '/admin/apparence/babalawo', label: 'Babaláwo', icon: UserRound },
+      { href: '/admin/apparence/textes', label: 'Textes de la vitrine', icon: Type },
+      { href: '/admin/apparence/reseaux', label: 'Réseaux et contacts', icon: Share2 },
+    ],
+  },
+  {
     title: 'Système',
     links: [
       { href: '/admin/audit', label: "Journal d'audit", icon: History },
@@ -70,14 +81,16 @@ function Nav({ path }: { path: string }) {
     <nav className="space-y-6 px-3 py-4">
       {ADMIN_GROUPS.map((g, i) => (
         <div key={i}>
-          {g.title && <p className="px-3 pb-2 text-[11px] font-medium uppercase tracking-[0.18em] text-text-faint">{g.title}</p>}
+          {g.title && <p className="px-3 pb-2 text-[10.5px] font-semibold uppercase tracking-[0.2em] text-text-faint">{g.title}</p>}
           <ul className="space-y-0.5">
             {g.links.map((l) => {
               const active = l.exact ? path === l.href : path.startsWith(l.href);
               return (
                 <li key={l.href}>
-                  <Link href={l.href} className={cn('flex items-center gap-3 rounded-[var(--radius-md)] px-3 py-2 text-[14px] transition-colors', active ? 'bg-primary-soft font-medium text-primary' : 'text-text-muted hover:bg-bg-subtle hover:text-text')}>
-                    <l.icon size={17} strokeWidth={1.5} />{l.label}
+                  <Link href={l.href} className={cn('group relative flex items-center gap-3 rounded-[var(--radius-md)] px-2.5 py-1.5 text-[14px] transition-colors', active ? 'bg-primary text-primary-foreground' : 'text-text-muted hover:bg-bg-subtle hover:text-text')}>
+                    {active && <span className="absolute -left-3 top-1/2 h-5 w-1 -translate-y-1/2 rounded-r-full bg-osun" />}
+                    <span className={cn('grid h-8 w-8 shrink-0 place-items-center rounded-lg transition-colors', active ? 'bg-kaolin/15' : 'bg-bg-subtle text-text-muted group-hover:bg-primary-soft group-hover:text-primary')}><l.icon size={16} strokeWidth={1.6} /></span>
+                    {l.label}
                   </Link>
                 </li>
               );
@@ -140,6 +153,32 @@ function QuickSearch() {
   );
 }
 
+/** Menu du compte dans l'en-tête admin : avatar rond, photo modifiable depuis le profil. */
+function AdminAccount({ name, src, onLogout }: { name: string; src?: string | null; onLogout: () => void }) {
+  const [open, setOpen] = useState(false);
+  const box = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    const close = (e: MouseEvent) => { if (box.current && !box.current.contains(e.target as Node)) setOpen(false); };
+    document.addEventListener('mousedown', close);
+    return () => document.removeEventListener('mousedown', close);
+  }, [open]);
+  return (
+    <div ref={box} className="relative">
+      <button onClick={() => setOpen((o) => !o)} aria-expanded={open} aria-label="Mon compte" className="flex items-center gap-1.5 rounded-full p-0.5 pr-2 hover:bg-bg-subtle">
+        <UserAvatar name={name} src={src} size={36} /><ChevronDown size={14} className="text-text-faint" />
+      </button>
+      {open && (
+        <div className="absolute right-0 z-50 mt-2 w-60 overflow-hidden rounded-[var(--radius-lg)] border border-border bg-surface p-2 shadow-[var(--shadow-elevated)]">
+          <Link href="/espace/profil" onClick={() => setOpen(false)} className="flex items-center gap-3 rounded-[var(--radius-md)] px-3 py-2.5 text-[14px] text-text hover:bg-bg-subtle"><UserRound size={15} /> Ma photo et mon profil</Link>
+          <Link href="/" onClick={() => setOpen(false)} className="flex items-center gap-3 rounded-[var(--radius-md)] px-3 py-2.5 text-[14px] text-text hover:bg-bg-subtle"><ExternalLink size={15} /> Voir le site</Link>
+          <button onClick={onLogout} className="flex w-full items-center gap-3 rounded-[var(--radius-md)] px-3 py-2.5 text-[14px] text-text-muted hover:bg-bg-subtle"><LogOut size={15} /> Se déconnecter</button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 /** Coquille admin (plan §9, sur le modèle de l'AppShell de dps). Accès réservé PRIEST / ADMIN, vérifié aussi par l'API. */
 export function AdminShell({ children }: { children: React.ReactNode }) {
   const path = usePathname();
@@ -153,31 +192,37 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="min-h-screen bg-bg-subtle">
-      <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 flex-col border-r border-border bg-surface md:flex">
-        <div className="flex h-16 shrink-0 items-center px-6"><Link href="/admin"><BrandMark /></Link></div>
+      <aside className="fixed inset-y-0 left-0 z-30 hidden w-[17rem] flex-col border-r border-border bg-surface md:flex">
+        <div className="relative flex h-[76px] shrink-0 items-center overflow-hidden bg-night px-5"><Adire kind="zigzag" opacity={0.07} /><Link href="/admin" className="relative"><Logo variant="full" size="sm" inverse /></Link></div>
         <div className="scrollbar-thin flex-1 overflow-y-auto"><Nav path={path} /></div>
         <div className="border-t border-border p-3">
-          <Link href="/" className="flex items-center gap-3 rounded-[var(--radius-md)] px-3 py-2 text-[13px] text-text-muted hover:bg-bg-subtle hover:text-text"><ExternalLink size={15} /> Voir le site</Link>
+          <div className="flex items-center gap-3 rounded-[var(--radius-lg)] bg-bg-subtle p-3">
+            <UserAvatar name={`${user?.firstName ?? ''} ${user?.lastName ?? ''}`} src={user?.avatarUrl} size={38} />
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-[13px] font-medium text-text">{user?.firstName} {user?.lastName}</p>
+              <p className="text-[11px] uppercase tracking-[0.12em] text-text-faint">{user?.role === 'ADMIN' ? 'Administration' : 'Prêtre'}</p>
+            </div>
+            <Link href="/" aria-label="Voir le site" className="grid h-8 w-8 place-items-center rounded-lg text-text-muted hover:bg-surface hover:text-text"><ExternalLink size={15} /></Link>
+          </div>
         </div>
       </aside>
-      <header className="fixed left-0 right-0 top-0 z-20 flex h-16 items-center gap-3 border-b border-border bg-surface/85 px-4 backdrop-blur-md sm:px-6 md:left-64 lg:px-8">
+      <header className="fixed left-0 right-0 top-0 z-20 flex h-[76px] items-center gap-3 border-b border-border bg-surface/90 px-4 backdrop-blur-md sm:px-6 md:left-[17rem] lg:px-8">
         <IconButton label="Ouvrir le menu" className="md:hidden" onClick={() => setOpen(true)}><Menu size={20} /></IconButton>
         <QuickSearch />
         <div className="ml-auto flex shrink-0 items-center gap-3">
           <NotificationsBell />
-          <span className="hidden text-[13px] text-text-muted sm:inline">{user?.firstName}</span>
-          <Avatar name={`${user?.firstName ?? ''} ${user?.lastName ?? ''}`} size={32} />
-          <IconButton label="Se déconnecter" onClick={() => { void logout().then(() => { window.location.href = '/'; }); }}><LogOut size={17} /></IconButton>
+          <Link href="/" className="hidden h-9 items-center gap-2 rounded-full border border-border-strong px-3.5 text-[13px] text-text-muted transition-colors hover:text-text lg:inline-flex"><ExternalLink size={14} /> Voir le site</Link>
+          <AdminAccount name={`${user?.firstName ?? ''} ${user?.lastName ?? ''}`} src={user?.avatarUrl} onLogout={() => { void logout().then(() => { window.location.href = '/'; }); }} />
         </div>
       </header>
-      <footer className="fixed bottom-0 left-0 right-0 z-20 hidden h-11 items-center justify-between border-t border-border bg-surface px-8 text-[12px] text-text-faint md:left-64 md:flex">
+      <footer className="fixed bottom-0 left-0 right-0 z-20 hidden h-11 items-center justify-between border-t border-border bg-surface px-8 text-[12px] text-text-faint md:left-[17rem] md:flex">
         <span>© {new Date().getFullYear()} Ifaôladé · Administration</span><span>Heure du Bénin (UTC+1)</span>
       </footer>
       <Drawer open={open} onClose={() => setOpen(false)} label="Menu admin">
-        <div className="flex h-16 items-center justify-between px-6"><BrandMark /><IconButton label="Fermer" onClick={() => setOpen(false)}><X size={18} /></IconButton></div>
+        <div className="relative flex h-[76px] items-center justify-between overflow-hidden bg-night px-5"><Adire kind="zigzag" opacity={0.07} /><span className="relative"><Logo variant="full" size="sm" inverse /></span><button aria-label="Fermer" onClick={() => setOpen(false)} className="relative grid h-9 w-9 place-items-center rounded-full border border-kaolin/25 text-kaolin"><X size={17} /></button></div>
         <div className="flex-1 overflow-y-auto"><Nav path={path} /></div>
       </Drawer>
-      <main className="px-4 pb-20 pt-24 sm:px-6 md:pl-[calc(16rem+1.5rem)] lg:px-8 lg:pl-[calc(16rem+2rem)]">
+      <main className="px-4 pb-20 pt-28 sm:px-6 md:pl-[calc(17rem+1.5rem)] lg:px-8 lg:pl-[calc(17rem+2rem)]">
         <div className="mx-auto max-w-[1400px]">{children}</div>
       </main>
     </div>

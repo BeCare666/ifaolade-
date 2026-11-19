@@ -1,12 +1,13 @@
 import type { Metadata } from 'next';
-import { Inter } from 'next/font/google';
+import { Cormorant_Garamond, Inter } from 'next/font/google';
 import { ToastProvider } from '@/components/ui/toast';
 import { apiGet } from '@/lib/api';
 import { AuthProvider } from '@/lib/auth';
 import './globals.css';
 
-// latin-ext est obligatoire pour les diacritiques yoruba (Ọ̀yẹ̀kú, Ọ̀ṣẹ́…), plan §6.3.
-const inter = Inter({ subsets: ['latin', 'latin-ext'], variable: '--font-inter', display: 'swap' });
+// Diacritiques yoruba (plan §6.3, REFONTE §1.3) : latin-ext (ṣ, ń) + vietnamese (ọ, ẹ et accents combinés ̀ ́ ̣).
+const inter = Inter({ subsets: ['latin', 'latin-ext', 'vietnamese'], variable: '--font-inter', display: 'swap' });
+const display = Cormorant_Garamond({ subsets: ['latin', 'latin-ext', 'vietnamese'], weight: ['500', '600'], variable: '--font-cormorant', display: 'swap' });
 
 const site = process.env.NEXT_PUBLIC_SITE_NAME || 'Ifaôladé';
 
@@ -29,7 +30,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   return (
     <html
       lang="fr"
-      className={inter.variable}
+      className={`${inter.variable} ${display.variable}`}
       style={custom ? ({ '--font-sans': `'${custom}', var(--font-inter), Arial, sans-serif` } as React.CSSProperties) : undefined}
     >
       {custom && (

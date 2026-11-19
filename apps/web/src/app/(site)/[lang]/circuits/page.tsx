@@ -5,6 +5,8 @@ import { EmptyState } from '@/components/ui/primitives';
 import { getDict, lp } from '@/i18n';
 import { pageLang, pageMeta, type LangParams } from '@/i18n/server';
 import { apiGet } from '@/lib/api';
+import { pick } from '@/lib/site-data-shared';
+import { getSiteData } from '@/lib/site-data.server';
 import type { Program } from '@/lib/types';
 
 export const revalidate = 300;
@@ -14,6 +16,7 @@ export async function generateMetadata({ params }: LangParams): Promise<Metadata
   const d = getDict(lang).circuits;
   return pageMeta(lang, '/circuits', d.metaTitle, d.metaDesc);
 }
+
 
 export default async function CircuitsPage({ params }: LangParams) {
   const lang = await pageLang(params);
@@ -45,7 +48,7 @@ export default async function CircuitsPage({ params }: LangParams) {
                 <div className="grid gap-10 md:grid-cols-2 lg:grid-cols-3">{programs.map((p) => <ProgramCard key={p.id} program={p} lang={lang} />)}</div>
                 <FrenchContentNote lang={lang} />
               </>
-            ) : <EmptyState title={d.emptyTitle} description={d.emptyText} />}
+            ) : <EmptyState title={pick(await getSiteData(lang), 'circuits.emptyTitle', d.emptyTitle)} description={d.emptyText} />}
           </div>
         </Container>
       </section>

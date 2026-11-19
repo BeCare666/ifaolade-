@@ -3,7 +3,7 @@
 import { allOdu } from '@ona/core';
 import { Search } from 'lucide-react';
 import Link from 'next/link';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { OduGlyph } from '@/components/odu/odu-glyph';
 import { OduMatrix } from '@/components/odu/odu-matrix';
 import { Input } from '@/components/ui/field';
@@ -21,6 +21,8 @@ export function OduExplorer() {
   const [view, setView] = useState<'grille' | 'liste'>('grille');
   const [kind, setKind] = useState<'tous' | 'meji' | 'omo'>('tous');
   const [q, setQ] = useState('');
+  // Lien du menu « Les 16 Méjì » : /odu?type=meji
+  useEffect(() => { if (new URLSearchParams(window.location.search).get('type') === 'meji') { setKind('meji'); setView('liste'); } }, []);
   const list = useMemo(() => {
     const nq = norm(q.trim());
     return allOdu().filter((o) => {

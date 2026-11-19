@@ -17,6 +17,7 @@ import { PaymentsModule } from './payments/payments.module';
 import { MediaModule } from './media/media.module';
 import { AdminModule } from './admin/admin.module';
 import { ContactModule } from './contact/contact.module';
+import { AppearanceModule } from './appearance/appearance.module';
 import { AuditInterceptor } from './common/audit.interceptor';
 import { HealthController } from './common/health.controller';
 
@@ -39,6 +40,7 @@ import { HealthController } from './common/health.controller';
     MediaModule,
     AdminModule,
     ContactModule,
+    AppearanceModule,
   ],
   controllers: [HealthController],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }, { provide: APP_INTERCEPTOR, useClass: AuditInterceptor }],

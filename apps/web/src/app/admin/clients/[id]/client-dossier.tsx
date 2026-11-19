@@ -7,9 +7,10 @@ import { dt } from '@/components/admin/list';
 import { EBO_STATUS, StatusBadge } from '@/components/consultation/parts';
 import { OduGlyph } from '@/components/odu/odu-glyph';
 import { Tabs } from '@/components/ui/overlay';
-import { Avatar, Badge, Card, CardHeader, EmptyState, ErrorState, KeyValue, PageHeader, Skeleton } from '@/components/ui/primitives';
+import { Badge, Card, CardHeader, EmptyState, ErrorState, KeyValue, PageHeader, Skeleton } from '@/components/ui/primitives';
 import { eur } from '@/lib/cn';
 import type { Consultation, Ewo } from '@/lib/types';
+import { UserAvatar } from '@/components/ui/user-avatar';
 import { useApi } from '@/lib/use-api';
 
 interface Dossier {
@@ -36,7 +37,7 @@ export function ClientDossier({ id }: { id: string }) {
     <>
       <PageHeader title={name} breadcrumb={[{ label: 'Admin', href: '/admin' }, { label: 'Clients', href: '/admin/clients' }, { label: name }]} />
       <Card className="mb-6 flex flex-col gap-6 p-6 sm:flex-row sm:items-center">
-        <Avatar name={name} size={56} />
+        <UserAvatar name={name} src={(u as { avatarUrl?: string | null }).avatarUrl} size={64} />
         <div className="grid flex-1 gap-4 sm:grid-cols-4">
           {[['Email', u.email], ['Téléphone', u.phone ?? '—'], ['Pays', u.country ?? '—'], ['Inscrit le', dt(u.createdAt, false)]].map(([l, v]) => (
             <div key={l}><p className="text-[12px] text-text-faint">{l}</p><p className="truncate text-[14px] text-text">{v}</p></div>

@@ -16,6 +16,7 @@ import { eur, fcfa } from '@/lib/cn';
 import { startPayment, type Provider } from '@/lib/payments';
 import type { EventItem } from '@/lib/types';
 import { useApi } from '@/lib/use-api';
+import { AvatarCard } from './avatar-card';
 import { TicketQr } from './ticket-qr';
 
 // ---------------- Événements ----------------
@@ -175,6 +176,7 @@ export function Profil() {
           </form>
         </Card>
         <div className="space-y-6">
+          <AvatarCard />
           <Card>
             <CardHeader title="Mes données" />
             <div className="space-y-4 p-5">

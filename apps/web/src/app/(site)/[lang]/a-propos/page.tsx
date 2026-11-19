@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
-import { CtaBand, PageHero, Photo } from '@/components/site/blocks';
+import { CtaBand, PageHero } from '@/components/site/blocks';
+import { SitePhoto } from '@/components/site/site-photo';
 import { Container, Reveal, SectionIntro } from '@/components/site/editorial';
 import { getDict, lp } from '@/i18n';
 import { pageLang, pageMeta, type LangParams } from '@/i18n/server';
@@ -23,7 +24,7 @@ export default async function AProposPage({ params }: LangParams) {
       <PageHero overline={d.overline} title={d.title} text={d.text} />
       <Container className="grid gap-14 pb-24 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:gap-24">
         <Reveal className="lg:sticky lg:top-28 lg:self-start">
-          <Photo lang={lang} alt={d.photoMain} expected={d.photoMain} className="aspect-[4/5]" priority sizes="(min-width: 1024px) 40vw, 100vw" />
+          <SitePhoto slot="about.main" lang={lang} alt={d.photoMain} expected={d.photoMain} className="aspect-[4/5]" priority sizes="(min-width: 1024px) 40vw, 100vw" />
         </Reveal>
         <div className="space-y-16">
           {d.blocks.map((b) => (
@@ -33,8 +34,8 @@ export default async function AProposPage({ params }: LangParams) {
             </div>
           ))}
           <div className="grid grid-cols-2 gap-4">
-            <Photo lang={lang} alt={d.photoOpon} expected={d.photoOpon} className="aspect-square" sizes="25vw" />
-            <Photo lang={lang} alt={d.photoTemple} expected={d.photoTemple} className="aspect-square" sizes="25vw" />
+            <SitePhoto slot="about.opon" lang={lang} alt={d.photoOpon} expected={d.photoOpon} className="aspect-square" sizes="25vw" />
+            <SitePhoto slot="about.temple" lang={lang} alt={d.photoTemple} expected={d.photoTemple} className="aspect-square" sizes="25vw" />
           </div>
         </div>
       </Container>

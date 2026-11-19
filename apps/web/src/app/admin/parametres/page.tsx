@@ -20,7 +20,7 @@ export default function ParametresPage() {
     <>
       <PageHeader title="Paramètres" description="Chaque modification est inscrite au journal d'audit." breadcrumb={[{ label: 'Admin', href: '/admin' }, { label: 'Paramètres' }]} />
       {error ? <ErrorState description={error} onRetry={reload} /> : !data ? <Skeleton className="h-64" /> : (
-        <div className="max-w-3xl space-y-6">{data.map((s) => <SettingCard key={s.key} s={s} onSaved={reload} />)}</div>
+        <div className="max-w-3xl space-y-6">{data.filter((s) => !s.key.startsWith('social.') && !s.key.startsWith('contact.')).map((s) => <SettingCard key={s.key} s={s} onSaved={reload} />)}</div>
       )}
     </>
   );

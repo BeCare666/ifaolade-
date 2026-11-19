@@ -30,6 +30,10 @@ const RULES: Rule[] = [
   { re: /^\/api\/admin\/articles\/([^/]+)$/, entity: 'article', load: (p, id) => p.article.findUnique({ where: { id } }) },
   { re: /^\/api\/admin\/articles$/, entity: 'article' },
   { re: /^\/api\/admin\/registrations\/([^/]+)\/checkin$/, entity: 'billet', load: (p, id) => p.eventRegistration.findUnique({ where: { id } }) },
+  { re: /^\/api\/admin\/site-images\/([^/]+)$/, entity: 'image du site', load: (p, id) => p.siteImage.findUnique({ where: { key: decodeURIComponent(id) } }) },
+  { re: /^\/api\/admin\/site-texts\/([^/]+\/[a-z]+)$/, entity: 'texte du site', load: (p, k) => { const [key, locale] = k.split('/'); return p.siteText.findUnique({ where: { key_locale: { key: decodeURIComponent(key), locale } } }); } },
+  { re: /^\/api\/admin\/practitioners\/([^/]+)$/, entity: 'babaláwo', load: (p, id) => p.practitioner.findUnique({ where: { id } }) },
+  { re: /^\/api\/admin\/practitioners$/, entity: 'babaláwo' },
   { re: /^\/api\/admin\/settings\/([^/]+)$/, entity: 'paramètre', load: (p, id) => p.setting.findUnique({ where: { key: decodeURIComponent(id) } }) },
 ];
 

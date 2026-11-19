@@ -87,7 +87,7 @@ export class AdminController {
       this.prisma.user.findMany({
         where, orderBy: { createdAt: 'desc' }, skip: (page - 1) * 25, take: 25,
         select: {
-          id: true, firstName: true, lastName: true, email: true, country: true, role: true, emailVerified: true, createdAt: true,
+          id: true, firstName: true, lastName: true, email: true, country: true, avatarUrl: true, role: true, emailVerified: true, createdAt: true,
           _count: { select: { consultations: true, readings: true, bookings: true } },
         },
       }),

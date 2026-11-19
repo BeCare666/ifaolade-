@@ -5,10 +5,12 @@ import { useRouter } from 'next/navigation';
 import { Suspense, useEffect, useState } from 'react';
 import { DataTable, dt, useUrlState } from '@/components/admin/list';
 import { Input } from '@/components/ui/field';
-import { Avatar, Badge, EmptyState, ErrorState, PageHeader, Skeleton } from '@/components/ui/primitives';
+import { Badge, EmptyState, ErrorState, PageHeader, Skeleton } from '@/components/ui/primitives';
+import { UserAvatar } from '@/components/ui/user-avatar';
 import { useApi } from '@/lib/use-api';
 
 interface Row {
+  avatarUrl?: string | null;
   id: string; firstName: string; lastName: string | null; email: string; country: string | null; role: string; emailVerified: boolean; createdAt: string;
   _count: { consultations: number; readings: number; bookings: number };
 }
@@ -39,7 +41,7 @@ function Clients() {
           <DataTable
             rows={data.items} rowKey={(r) => r.id} onRowClick={(r) => router.push(`/admin/clients/${r.id}`)}
             columns={[
-              { key: 'n', label: 'Client', render: (r) => <span className="flex items-center gap-3"><Avatar name={`${r.firstName} ${r.lastName ?? ''}`} size={30} /><span><span className="block text-text">{r.firstName} {r.lastName}</span><span className="text-[12px] text-text-faint">{r.email}</span></span></span> },
+              { key: 'n', label: 'Client', render: (r) => <span className="flex items-center gap-3"><UserAvatar src={r.avatarUrl} name={`${r.firstName} ${r.lastName ?? ''}`} size={30} /><span><span className="block text-text">{r.firstName} {r.lastName}</span><span className="text-[12px] text-text-faint">{r.email}</span></span></span> },
               { key: 'p', label: 'Pays', render: (r) => <span className="text-text-muted">{r.country ?? '—'}</span> },
               { key: 'c', label: 'Activité', render: (r) => <span className="text-[13px] tabular-nums text-text-muted">{r._count.readings} portrait · {r._count.consultations} consult. · {r._count.bookings} voyage</span> },
               { key: 'v', label: 'Email', render: (r) => (r.emailVerified ? <Badge tone="success">Vérifié</Badge> : <Badge tone="warning">Non vérifié</Badge>) },
@@ -48,7 +50,7 @@ function Clients() {
             ]}
             mobile={(r) => (
               <div className="flex items-center gap-3">
-                <Avatar name={`${r.firstName} ${r.lastName ?? ''}`} size={34} />
+                <UserAvatar src={r.avatarUrl} name={`${r.firstName} ${r.lastName ?? ''}`} size={34} />
                 <div className="min-w-0"><p className="truncate text-[14px] text-text">{r.firstName} {r.lastName}</p><p className="truncate text-[12px] text-text-faint">{r.email}</p></div>
               </div>
             )}

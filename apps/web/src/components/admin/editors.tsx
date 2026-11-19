@@ -66,12 +66,12 @@ export function ListEditor({ items, onChange, placeholder, max = 12 }: { items: 
   );
 }
 
-interface Signature { signature: string; apiKey: string; cloudName: string; timestamp: number; folder: string; type?: string }
+interface Signature { signature: string; apiKey: string; cloudName: string; timestamp: number; folder: string; [k: string]: string | number | undefined }
 
 /** Envoi direct à Cloudinary avec signature de l'API (plan §14.3). Renvoie l'URL et l'identifiant public. */
 export function CloudinaryUpload({
-  folder, accept, label, token, onUploaded,
-}: { folder: string; accept: string; label: string; token: string | null; onUploaded: (r: { url: string; publicId: string }) => void }) {
+  folder, accept, label, token, onUploaded, signaturePath, className,
+}: { folder: string; accept: string; label: string; token: string | null; onUploaded: (r: { url: string; publicId: string }) => void; signaturePath?: string; className?: string }) {
   const [progress, setProgress] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -79,15 +79,14 @@ export function CloudinaryUpload({
     setError(null);
     setProgress(0);
     try {
-      const sig = await apiSend<Signature>(`/admin/media/signature?folder=${encodeURIComponent(folder)}`, undefined, 'GET', token);
+      const sig = await apiSend<Signature>(signaturePath ?? `/admin/media/signature?folder=${encodeURIComponent(folder)}`, undefined, 'GET', token);
       const kind = file.type.startsWith('video/') ? 'video' : 'image';
       const fd = new FormData();
       fd.append('file', file);
       fd.append('api_key', sig.apiKey);
-      fd.append('timestamp', String(sig.timestamp));
       fd.append('signature', sig.signature);
-      fd.append('folder', sig.folder);
-      if (sig.type) fd.append('type', sig.type);
+      // Tous les paramètres signés par l'API (dossier, horodatage, type, transformation imposée…) sont renvoyés tels quels.
+      for (const [k, v] of Object.entries(sig)) if (!['signature', 'apiKey', 'cloudName'].includes(k) && v !== undefined) fd.append(k, String(v));
       const res = await new Promise<{ secure_url: string; public_id: string }>((resolve, reject) => {
         const xhr = new XMLHttpRequest();
         xhr.open('POST', `https://api.cloudinary.com/v1_1/${sig.cloudName}/${kind}/upload`);
@@ -105,7 +104,7 @@ export function CloudinaryUpload({
   }
 
   return (
-    <div>
+    <div className={className}>
       <label className={cn('inline-flex h-10 cursor-pointer items-center gap-2 rounded-[var(--radius-md)] border border-border-strong bg-surface px-4 text-[14px] text-text transition-colors hover:border-text-faint', progress !== null && 'pointer-events-none opacity-60')}>
         <Upload size={15} /> {progress !== null ? `Envoi… ${progress} %` : label}
         <input type="file" accept={accept} className="sr-only" onChange={(e) => { const f = e.target.files?.[0]; if (f) upload(f); e.target.value = ''; }} />

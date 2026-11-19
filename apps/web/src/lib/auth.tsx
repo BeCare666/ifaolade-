@@ -10,6 +10,9 @@ export interface User {
   lastName: string | null;
   phone: string | null;
   country: string | null;
+  city?: string | null;
+  avatarUrl?: string | null;
+  createdAt?: string;
   role: 'CLIENT' | 'PRIEST' | 'ADMIN';
   emailVerified: boolean;
 }

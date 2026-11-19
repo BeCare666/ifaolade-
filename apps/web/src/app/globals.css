@@ -39,6 +39,15 @@
   --color-water: #2F5F7E;
 
   --font-sans: var(--font-inter), "Inter", Arial, sans-serif;
+  --font-display: var(--font-cormorant), "Cormorant Garamond", Georgia, serif;
+
+  /* Refonte (REFONTE_DESIGN §1.1) : indigo nuit des bandes adire, sable de l'ìyẹ̀rọ̀sùn */
+  --color-night: #141B2E;
+  --color-night-soft: #1F2A44;
+  --color-sand: #EFE7D8;
+  --color-kaolin: #FAF8F4;
+  --color-osun: #9E3B26;
+  --color-osun-hover: #87311F;
 
   --radius-sm: 6px;
   --radius-md: 10px;
@@ -93,25 +102,31 @@
 
 /* Échelle typographique (plan §6.3) */
 @utility text-hero {
-  font-size: 44px;
-  line-height: 1.02;
-  letter-spacing: -0.04em;
-  font-weight: 400;
-  @media (width >= 64rem) { font-size: 72px; }
+  font-family: var(--font-display);
+  font-size: 50px;
+  line-height: 0.98;
+  letter-spacing: -0.02em;
+  font-weight: 500;
+  @media (width >= 64rem) { font-size: 84px; }
 }
 @utility text-section {
-  font-size: 36px;
-  line-height: 1.05;
-  letter-spacing: -0.035em;
-  font-weight: 400;
-  @media (width >= 64rem) { font-size: 56px; }
+  font-family: var(--font-display);
+  font-size: 40px;
+  line-height: 1.02;
+  letter-spacing: -0.015em;
+  font-weight: 500;
+  @media (width >= 64rem) { font-size: 62px; }
 }
 @utility text-card-title {
-  font-size: 22px;
-  line-height: 1.25;
-  letter-spacing: -0.01em;
-  font-weight: 400;
-  @media (width >= 64rem) { font-size: 26px; }
+  font-family: var(--font-display);
+  font-size: 25px;
+  line-height: 1.2;
+  letter-spacing: -0.005em;
+  font-weight: 600;
+  @media (width >= 64rem) { font-size: 29px; }
+}
+@utility font-display {
+  font-family: var(--font-display);
 }
 @utility text-body {
   font-size: 15px;

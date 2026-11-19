@@ -16,7 +16,8 @@ const securityHeaders = [
 const nextConfig = {
   transpilePackages: ['@ona/core'],
   poweredByHeader: false,
-  images: { remotePatterns: [{ protocol: 'https', hostname: 'res.cloudinary.com' }] },
+  // Refonte §8.1 et §9 : ton Cloudinary, et les images de départ Unsplash / Pexels (avec ton accord).
+  images: { remotePatterns: [{ protocol: 'https', hostname: 'res.cloudinary.com' }, { protocol: 'https', hostname: 'images.unsplash.com' }, { protocol: 'https', hostname: 'images.pexels.com' }] },
   async headers() {
     return [{ source: '/:path*', headers: securityHeaders }];
   },

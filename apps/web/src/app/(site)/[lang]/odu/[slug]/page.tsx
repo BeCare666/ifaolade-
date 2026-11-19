@@ -12,6 +12,8 @@ import { Breadcrumb } from '@/components/ui/primitives';
 import { getDict, isLang, lp, tpl, type Lang } from '@/i18n';
 import { pageMeta } from '@/i18n/server';
 import { apiGet } from '@/lib/api';
+import { pick } from '@/lib/site-data-shared';
+import { getSiteData } from '@/lib/site-data.server';
 import type { OduTeaching } from '@/lib/types';
 
 export const revalidate = 600;
@@ -38,7 +40,7 @@ export default async function OduDetail({ params }: P) {
   const o = oduBySlug(slug);
   if (!o) notFound();
   // Le texte du prêtre (admin) est en français : il ne remplace le texte du moteur qu'en français.
-  const content = await apiGet<OduTeaching>(`/odu/${o.slug}`, 600);
+  const [content, site] = await Promise.all([apiGet<OduTeaching>(`/odu/${o.slug}`, 600), getSiteData(lang)]);
   const txt = oduText(o, lang);
   const all = allOdu();
   const prev = o.rank > 1 ? all[o.rank - 2] : null;
@@ -94,15 +96,15 @@ export default async function OduDetail({ params }: P) {
 
             <Reveal delay={0.05} className="mt-12 border-t border-border pt-10">
               <h2 className="text-card-title text-text">{d.elementsTitle}</h2>
-              <p className="mt-3 text-[14px] text-text-muted">{d.elementsText}</p>
-              <div className="mt-6"><OduElements elements={o.elements} lang={lang} /></div>
+              <p className="mt-3 text-[14px] text-text-muted">{pick(site, 'odu.elementsText', d.elementsText)}</p>
+              <div className="mt-6"><OduElements elements={o.elements} lang={lang} labels={{ manifest: site.texts['odu.manifest'], balance: site.texts['odu.balance'], latent: site.texts['odu.latent'] }} /></div>
               <p className="mt-6 font-mono text-[12px] tracking-[0.25em] text-text-faint">{o.binary}</p>
             </Reveal>
 
             <Reveal delay={0.05} className="mt-12 border-t border-border pt-10">
               <h2 className="text-card-title text-text">{d.teaching}</h2>
               <div className="mt-6">
-                {content?.teaching ? <><Markdown source={content.teaching} /><FrenchContentNote lang={lang} /></> : <p className="text-body">{d.teachingPending}</p>}
+                {content?.teaching ? <><Markdown source={content.teaching} /><FrenchContentNote lang={lang} /></> : <p className="text-body">{pick(site, 'odu.teachingPending', d.teachingPending)}</p>}
               </div>
             </Reveal>
 

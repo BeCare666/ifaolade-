@@ -50,7 +50,7 @@ export class UsersService {
       this.prisma.user.update({
         where: { id: userId },
         data: {
-          email: ghost, firstName: 'Compte supprimé', lastName: null, phone: null, country: null, city: null,
+          email: ghost, firstName: 'Compte supprimé', lastName: null, phone: null, country: null, city: null, avatarUrl: null,
           passwordHash: token(32), emailToken: null, resetToken: null, resetExpires: null,
         },
       }),

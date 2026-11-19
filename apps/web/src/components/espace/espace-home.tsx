@@ -1,7 +1,9 @@
 'use client';
 
 import { oduById } from '@ona/core';
-import { ArrowRight, CalendarClock, MessageCircleQuestion, Sparkles, Video } from 'lucide-react';
+import { ArrowRight, CalendarClock, CalendarPlus, FolderHeart, Gift, Hand, MessageCircleQuestion, Sparkles, Video } from 'lucide-react';
+import { Adire } from '@/components/brand/patterns';
+import { UserAvatar } from '@/components/ui/user-avatar';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { btTime, StatusBadge } from '@/components/consultation/parts';
@@ -40,8 +42,40 @@ export function EspaceHome() {
 
   return (
     <div>
-      <p className="text-overline">Mon espace</p>
-      <h1 className="mt-3 text-[32px] font-normal leading-[1.1] tracking-[-0.03em] text-text sm:text-[40px]">Ẹ kú àbọ̀, {user?.firstName}.</h1>
+      {/* Bannière de bienvenue (REFONTE §10.4) */}
+      <section className="relative overflow-hidden rounded-[var(--radius-photo)] bg-night p-6 text-kaolin sm:p-8">
+        <Adire kind="grid" opacity={0.06} />
+        <div className="relative flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-4">
+            {user && <UserAvatar name={`${user.firstName} ${user.lastName ?? ''}`} src={user.avatarUrl} size={64} />}
+            <div>
+              <p className="text-[11px] font-medium uppercase tracking-[0.22em] text-kaolin/55">Ẹ kú àbọ̀</p>
+              <h1 className="font-display text-[34px] font-semibold leading-tight sm:text-[40px]">{user?.firstName}</h1>
+              <p className="text-[14px] text-kaolin/70">
+                {upcoming ? <>Prochain rendez-vous : {btTime(upcoming.slot!.startsAt, { weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' })}</> : 'Aucun rendez-vous à venir.'}
+              </p>
+            </div>
+          </div>
+          <Link href={hasFree ? '/consultations/reserver?offre=FIRST_FREE' : '/consultations/reserver'} className="inline-flex h-12 shrink-0 items-center justify-center gap-2 rounded-full bg-osun px-6 text-[14px] font-medium text-kaolin hover:bg-osun-hover">
+            {hasFree ? <><Gift size={16} /> Ma consultation offerte</> : <><CalendarPlus size={16} /> Réserver</>}
+          </Link>
+        </div>
+      </section>
+
+      {/* Actions rapides */}
+      <div className="mt-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
+        {[
+          { href: '/espace/consultations', label: 'Mes consultations', icon: MessageCircleQuestion },
+          { href: '/espace/dossier', label: 'Mon dossier spirituel', icon: FolderHeart },
+          { href: '/espace/portrait', label: 'Mon portrait', icon: Sparkles },
+          { href: '/mon-odu', label: "J'ai déjà mon Odu", icon: Hand },
+        ].map((a) => (
+          <Link key={a.href} href={a.href} className="group flex items-center gap-3 rounded-[var(--radius-lg)] border border-border bg-surface p-4 transition-all hover:-translate-y-0.5 hover:border-primary">
+            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-primary-soft text-primary transition-colors group-hover:bg-primary group-hover:text-primary-foreground"><a.icon size={18} strokeWidth={1.6} /></span>
+            <span className="text-[14px] leading-tight text-text">{a.label}</span>
+          </Link>
+        ))}
+      </div>
 
       <div className="mt-8 space-y-3">
         {user && !user.emailVerified && <Alert tone="warning" title="Confirme ton email">Un lien t&apos;a été envoyé à {user.email}. Il active ta consultation offerte.</Alert>}

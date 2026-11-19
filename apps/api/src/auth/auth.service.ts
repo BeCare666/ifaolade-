@@ -12,7 +12,7 @@ import { ForgotDto, LoginDto, RegisterDto, ResetDto } from './auth.dto';
 
 export const publicUser = (u: User) => ({
   id: u.id, email: u.email, firstName: u.firstName, lastName: u.lastName, phone: u.phone,
-  country: u.country, city: u.city, role: u.role, emailVerified: u.emailVerified, createdAt: u.createdAt,
+  country: u.country, city: u.city, avatarUrl: u.avatarUrl, role: u.role, emailVerified: u.emailVerified, createdAt: u.createdAt,
 });
 
 /** Étape 2.2 : cookie de renouvellement. Même site (api.<domaine>) → Lax ; domaines différents → None + Secure. */

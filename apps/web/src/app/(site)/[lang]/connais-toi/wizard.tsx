@@ -6,7 +6,7 @@ import { AnimatePresence, motion } from 'motion/react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
-import { OpeleCast } from '@/components/odu/opele-cast';
+import { AnalysisVeil } from '@/components/portrait/analysis-veil';
 import { Container } from '@/components/site/editorial';
 import { Button } from '@/components/ui/button';
 import { Checkbox, Field, Input, RadioCards, Select, Textarea } from '@/components/ui/field';
@@ -97,7 +97,8 @@ export function Wizard() {
   async function submit() {
     setReading(true);
     const started = Date.now();
-    const wait = () => new Promise((r) => setTimeout(r, Math.max(0, 1900 - (Date.now() - started))));
+    // REFONTE R12 : la vue d'analyse reste au moins 6 secondes, même si le calcul est plus rapide.
+    const wait = () => new Promise((r) => setTimeout(r, Math.max(0, 6200 - (Date.now() - started))));
     try {
       const res = await apiSend<{ id: string }>('/readings', { ...input(), consent: true, locale: lang }, 'POST', token);
       try { localStorage.setItem('ifaolade:last-reading', res.id); } catch { /* rien */ }
@@ -241,9 +242,7 @@ function ReadingScreen({ dr }: { dr: Draft }) {
   );
   return (
     <Container className="flex min-h-[70vh] flex-col items-center justify-center py-20 text-center">
-      <OpeleCast right={odu.marks.right} left={odu.marks.left} label={d.wizard.opeleLabel} />
-      <p className="mt-10 text-[22px] tracking-[-0.01em] text-text">{tpl(d.wizard.reading, { name: dr.firstName })}</p>
-      <p className="mt-3 max-w-sm text-[14px] text-text-muted">{d.wizard.readingText}</p>
+      <AnalysisVeil name={dr.firstName} right={odu.marks.right} left={odu.marks.left} steps={[...d.wizard.analysisSteps]} title={d.wizard.analysisTitle} live={d.wizard.analysisLive} />
     </Container>
   );
 }

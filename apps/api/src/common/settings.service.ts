@@ -5,12 +5,19 @@ import { PrismaService } from './prisma.service';
 /** Polices proposées dans Admin › Paramètres (plan §6.3 : une seule famille, modifiable comme sur edoto). */
 export const ALLOWED_FONTS = ['Inter', 'Manrope', 'DM Sans', 'Work Sans', 'IBM Plex Sans', 'Source Sans 3', 'Nunito Sans', 'Poppins'];
 
-interface Def { label: string; default: number | string; validate: (v: unknown) => boolean; hint: string; public?: boolean }
+interface Def { label: string; default: number | string; validate: (v: unknown) => boolean; hint: string; public?: boolean; type?: 'number' | 'string' | 'font' }
+
+const optional = (re: RegExp) => (v: unknown) => typeof v === 'string' && (v === '' || (v.length <= 300 && re.test(v)));
+const social = (label: string, host: string): Def => ({
+  label, default: '', public: true, type: 'string',
+  validate: optional(new RegExp(`^https://([a-z0-9-]+\\.)*${host.replace(/\./g, '\\.')}/`, 'i')),
+  hint: `Adresse complète commençant par https://${host}/ , ou vide pour masquer l'icône.`,
+});
 
 /** Étape 2.1 : paramètres modifiables. La valeur d'environnement sert de valeur par défaut. */
 export const SETTINGS: Record<string, Def> = {
   'site.font': {
-    label: 'Police du site', default: 'Inter', public: true,
+    label: 'Police du site', default: 'Inter', public: true, type: 'font',
     validate: (v) => typeof v === 'string' && ALLOWED_FONTS.includes(v),
     hint: `Une parmi : ${ALLOWED_FONTS.join(', ')}. Doit afficher correctement les diacritiques yoruba.`,
   },
@@ -21,6 +28,24 @@ export const SETTINGS: Record<string, Def> = {
   'booking.depositRate': {
     label: 'Acompte des voyages (part du total)', default: Number(process.env.BOOKING_DEPOSIT_RATE || 0.3),
     validate: (v) => typeof v === 'number' && v > 0 && v <= 1, hint: 'Entre 0 et 1, ex. 0,3 pour 30 %.',
+  },
+  // Refonte §8.3 : réseaux sociaux et contacts. Une icône n'apparaît sur le site que si le lien est renseigné.
+  'social.facebook': social('Facebook', 'facebook.com'),
+  'social.instagram': social('Instagram', 'instagram.com'),
+  'social.youtube': social('YouTube', 'youtube.com'),
+  'social.tiktok': social('TikTok', 'tiktok.com'),
+  'social.x': social('X (Twitter)', 'x.com'),
+  'contact.whatsapp': {
+    label: 'WhatsApp', default: '', public: true, type: 'string',
+    validate: optional(/^\+\d{8,15}$/), hint: 'Numéro international sans espace, ex. +22990000000, ou vide.',
+  },
+  'contact.email': {
+    label: 'Email de contact public', default: '', public: true, type: 'string',
+    validate: optional(/^[^\s@]+@[^\s@]+\.[^\s@]+$/), hint: 'Adresse affichée sur le site, ou vide.',
+  },
+  'contact.place': {
+    label: 'Lieu affiché', default: 'Bénin', public: true, type: 'string',
+    validate: (v) => typeof v === 'string' && v.length <= 80, hint: '80 caractères au plus, ex. « Ouidah, Bénin ».',
   },
 };
 
@@ -44,7 +69,7 @@ export class SettingsService {
 
   async list() {
     const map = await this.load();
-    return Object.entries(SETTINGS).map(([key, d]) => ({ key, label: d.label, hint: d.hint, value: map[key], default: d.default }));
+    return Object.entries(SETTINGS).map(([key, d]) => ({ key, label: d.label, hint: d.hint, type: d.type ?? 'number', value: map[key], default: d.default }));
   }
 
   async publicValues() {

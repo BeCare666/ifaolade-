@@ -14,6 +14,8 @@ import { Stepper } from '@/components/ui/primitives';
 import { tpl } from '@/i18n';
 import { useI18n } from '@/i18n/client';
 import { apiGet } from '@/lib/api';
+import { pick } from '@/lib/site-data-shared';
+import { useSiteData } from '@/lib/site-data';
 import { cn } from '@/lib/cn';
 import { ODU_DOMAINS, type OduDomain, type OduLecture } from '@/lib/odu-domains';
 
@@ -283,6 +285,7 @@ interface Detail { essence: string; teaching: string | null }
 
 function Explanation({ odu, domain, onRestart }: { odu: Odu; domain: OduDomain | null; onRestart: () => void }) {
   const { lang, d: dict, href } = useI18n();
+  const site = useSiteData();
   const d = dict.myOdu;
   const [step, setStep] = useState(0);
   const [detail, setDetail] = useState<Detail | null>(null);
@@ -335,8 +338,8 @@ function Explanation({ odu, domain, onRestart }: { odu: Odu; domain: OduDomain |
       case 2:
         return (
           <>
-            <p className="text-body mb-6">{dict.odu.elementsText}</p>
-            <OduElements elements={odu.elements} lang={lang} />
+            <p className="text-body mb-6">{pick(site, 'odu.elementsText', dict.odu.elementsText)}</p>
+            <OduElements elements={odu.elements} lang={lang} labels={{ manifest: site.texts['odu.manifest'], balance: site.texts['odu.balance'], latent: site.texts['odu.latent'] }} />
           </>
         );
       case 3:
