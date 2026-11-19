@@ -1,0 +1,161 @@
+@import "tailwindcss";
+
+/* =====================================================================================
+   Design system Ifaôladé : « kaolin, indigo, osùn » (plan §6). Seules valeurs autorisées.
+   Interdits (§6.6) : doré, dégradés violets, blobs, halos, émojis, fond cosmos.
+   ===================================================================================== */
+@theme {
+  --color-bg: #FAF8F4;
+  --color-bg-subtle: #F3F0EA;
+  --color-surface: #FFFFFF;
+  --color-border: #E8E2D8;
+  --color-border-strong: #D9D1C4;
+
+  --color-text: #17150F;
+  --color-text-muted: #6A6359;
+  --color-text-faint: #A39C90;
+
+  --color-primary: #1F2A44;
+  --color-primary-hover: #16203A;
+  --color-primary-soft: #E7EAF2;
+  --color-primary-foreground: #FFFFFF;
+
+  --color-accent: #9E3B26;
+  --color-accent-soft: #F6E7E1;
+
+  --color-success: #2F7A4F;
+  --color-success-soft: #E6F2EA;
+  --color-warning: #A86A12;
+  --color-warning-soft: #F8EEDC;
+  --color-danger: #B23A32;
+  --color-danger-soft: #F8E6E4;
+  --color-info: #2D6A9A;
+  --color-info-soft: #E5EFF7;
+
+  /* Éléments (astrologie et Odu) : teintes de terre, non saturées */
+  --color-fire: #B4533A;
+  --color-earth: #8A7350;
+  --color-air: #7D93AD;
+  --color-water: #2F5F7E;
+
+  --font-sans: var(--font-inter), "Inter", Arial, sans-serif;
+
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --radius-photo: 28px;
+
+  --shadow-card: 0 1px 2px rgba(23, 21, 15, 0.04);
+  --shadow-soft: 0 1px 2px rgba(23, 21, 15, 0.04), 0 8px 24px -12px rgba(31, 42, 68, 0.12);
+  --shadow-elevated: 0 4px 8px rgba(23, 21, 15, 0.06), 0 16px 40px -12px rgba(23, 21, 15, 0.18);
+
+  --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Thème sombre : espaces client et admin uniquement, sur option (plan §6.2) */
+[data-theme="dark"] {
+  --color-bg: #14130F;
+  --color-bg-subtle: #1B1A16;
+  --color-surface: #201F1A;
+  --color-border: #2E2C26;
+  --color-border-strong: #3B3830;
+  --color-text: #F2EFE8;
+  --color-text-muted: #B3AC9F;
+  --color-text-faint: #7F786C;
+  --color-primary: #AFC0E6;
+  --color-primary-hover: #C6D3F0;
+  --color-primary-soft: #252C3D;
+  --color-primary-foreground: #14130F;
+  --color-accent: #E08C72;
+  --color-accent-soft: #3A2620;
+}
+
+@layer base {
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  body {
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-family: var(--font-sans);
+  }
+  ::selection {
+    background: var(--color-primary-soft);
+    color: var(--color-text);
+  }
+  :focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+}
+
+/* Échelle typographique (plan §6.3) */
+@utility text-hero {
+  font-size: 44px;
+  line-height: 1.02;
+  letter-spacing: -0.04em;
+  font-weight: 400;
+  @media (width >= 64rem) { font-size: 72px; }
+}
+@utility text-section {
+  font-size: 36px;
+  line-height: 1.05;
+  letter-spacing: -0.035em;
+  font-weight: 400;
+  @media (width >= 64rem) { font-size: 56px; }
+}
+@utility text-card-title {
+  font-size: 22px;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+  font-weight: 400;
+  @media (width >= 64rem) { font-size: 26px; }
+}
+@utility text-body {
+  font-size: 15px;
+  line-height: 1.8;
+  color: var(--color-text-muted);
+  @media (width >= 64rem) { font-size: 16px; }
+}
+@utility text-overline {
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--color-text-faint);
+}
+
+@utility scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-border-strong) transparent;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Widget FeexPay (SDK v2) : plein écran, au-dessus du site */
+.feexpay-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: var(--color-surface);
+}
+
+/* Impression / PDF du compte rendu (plan §4.10) */
+@media print {
+  header, footer, nav, .no-print { display: none !important; }
+  body { background: #fff; }
+  .print-only { display: block !important; }
+}
+.print-only { display: none; }

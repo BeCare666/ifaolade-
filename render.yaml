@@ -1,0 +1,62 @@
+# Déploiement de l'API Ifaôladé sur Render (plan étape 8.3). Les secrets se saisissent dans le tableau de bord Render.
+services:
+  - type: web
+    name: ifaolade-api
+    runtime: node
+    region: frankfurt # proche de TiDB eu-central-1 et de la diaspora européenne
+    plan: starter
+    buildCommand: >-
+      npm ci &&
+      npm run build:core &&
+      npm run build -w @ona/api &&
+      npx prisma db push --schema apps/api/prisma/schema.prisma --skip-generate
+    startCommand: npm run start -w @ona/api
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NODE_VERSION
+        value: "20"
+      - key: JWT_EXPIRES
+        value: 15m
+      # lax si l'API est sur api.<ton domaine> (recommandé) ; none si elle reste sur onrender.com
+      - key: COOKIE_SAMESITE
+        value: lax
+      - key: EUR_TO_XOF
+        value: "655.957"
+      - key: BOOKING_DEPOSIT_RATE
+        value: "0.3"
+      - key: FEEXPAY_API_BASE
+        value: https://api-v2.feexpay.me
+      - key: VIDEO_BASE_URL
+        value: https://meet.jit.si
+      - key: MAIL_FROM_NAME
+        value: Ifaôladé
+      # Secrets : à renseigner dans Render, jamais dans ce fichier
+      - key: DATABASE_URL
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: WEB_URL
+        sync: false
+      - key: API_URL
+        sync: false
+      - key: BREVO_API_KEY
+        sync: false
+      - key: MAIL_FROM_EMAIL
+        sync: false
+      - key: MAIL_ADMIN_EMAIL
+        sync: false
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false
+      - key: CLOUDINARY_API_KEY
+        sync: false
+      - key: CLOUDINARY_API_SECRET
+        sync: false
+      - key: STRIPE_SECRET_KEY
+        sync: false
+      - key: STRIPE_WEBHOOK_SECRET
+        sync: false
+      - key: FEEXPAY_API_KEY
+        sync: false

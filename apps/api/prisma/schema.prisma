@@ -1,0 +1,433 @@
+// TiDB Cloud est compatible MySQL. relationMode "prisma" : intégrité gérée par Prisma.
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider     = "mysql"
+  url          = env("DATABASE_URL")
+  relationMode = "prisma"
+}
+
+enum Role {
+  CLIENT
+  PRIEST
+  ADMIN
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  passwordHash  String
+  firstName     String
+  lastName      String?
+  phone         String?
+  country       String?
+  city          String?
+  role          Role      @default(CLIENT)
+  emailVerified Boolean   @default(false)
+  emailToken    String?
+  resetToken    String?
+  resetExpires  DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  readings      Reading[]
+  consultations Consultation[]
+  payments      Payment[]
+  bookings      Booking[]
+  registrations EventRegistration[]
+  ewos          Ewo[]
+  notifications Notification[]
+  refreshTokens RefreshToken[]
+}
+
+model Reading {
+  id        String   @id @default(cuid())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id])
+  input     Json
+  result    Json
+  oduId     Int
+  sunSign   String
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+model ConsultationOffer {
+  id            String         @id @default(cuid())
+  code          String         @unique
+  title         String
+  description   String         @db.Text
+  durationMin   Int
+  priceCents    Int
+  currency      String         @default("EUR")
+  isFree        Boolean        @default(false)
+  mode          String // WRITTEN | VIDEO | ASSISTED
+  requiresSlot  Boolean        @default(true)
+  features      Json?
+  active        Boolean        @default(true)
+  order         Int            @default(0)
+  consultations Consultation[]
+}
+
+model Slot {
+  id           String        @id @default(cuid())
+  startsAt     DateTime
+  endsAt       DateTime
+  isBooked     Boolean       @default(false)
+  consultation Consultation?
+
+  @@index([startsAt])
+}
+
+enum ConsultationStatus {
+  REQUESTED
+  AWAITING_PAYMENT
+  CONFIRMED
+  COMPLETED
+  CANCELLED
+}
+
+model Consultation {
+  id          String              @id @default(cuid())
+  userId      String
+  user        User                @relation(fields: [userId], references: [id])
+  offerId     String
+  offer       ConsultationOffer   @relation(fields: [offerId], references: [id])
+  slotId      String?             @unique
+  slot        Slot?               @relation(fields: [slotId], references: [id])
+  status      ConsultationStatus  @default(REQUESTED)
+  question    String              @db.Text
+  context     String?             @db.Text
+  readingId   String?
+  roomUrl     String?
+  priceCents  Int
+  currency    String              @default("EUR")
+  isFirstFree Boolean             @default(false)
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+  report      ConsultationReport?
+  ebos        Ebo[]
+  followUps   FollowUp[]
+
+  @@index([userId])
+  @@index([offerId])
+}
+
+model ConsultationReport {
+  id             String       @id @default(cuid())
+  consultationId String       @unique
+  consultation   Consultation @relation(fields: [consultationId], references: [id])
+  oduId          Int
+  orientation    String // IRE | IBI
+  oriDetail      String? // type d'ire / d'ibi
+  ese            String       @db.Text
+  message        String       @db.Text
+  actionPlan     Json // string[]
+  ewo            Json // string[]
+  privateNotes   String?      @db.Text
+  publishedAt    DateTime?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+}
+
+enum EboStatus {
+  PROPOSED
+  ACCEPTED
+  DECLINED
+  PAID
+  PERFORMED
+}
+
+model Ebo {
+  id             String       @id @default(cuid())
+  consultationId String
+  consultation   Consultation @relation(fields: [consultationId], references: [id])
+  title          String
+  purpose        String       @db.Text
+  items          Json // { label, qty, unitCents }[]
+  materialsCents Int
+  priestFeeCents Int
+  currency       String       @default("EUR")
+  status         EboStatus    @default(PROPOSED)
+  liveAllowed    Boolean      @default(true)
+  proofVideoUrl  String?
+  proofPublicId  String?
+  performedAt    DateTime?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@index([consultationId])
+}
+
+model FollowUp {
+  id             String       @id @default(cuid())
+  consultationId String
+  consultation   Consultation @relation(fields: [consultationId], references: [id])
+  dayOffset      Int
+  dueAt          DateTime
+  reminderSentAt DateTime?
+  answeredAt     DateTime?
+  progress       Int?
+  note           String?      @db.Text
+  priestReply    String?      @db.Text
+
+  @@index([consultationId])
+  @@index([dueAt])
+}
+
+model Ewo {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  text      String
+  source    String?
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+enum ProgramKind {
+  INITIATION
+  TOUR
+  RETREAT
+}
+
+model Program {
+  id           String           @id @default(cuid())
+  slug         String           @unique
+  kind         ProgramKind
+  title        String
+  subtitle     String?
+  description  String           @db.Text
+  durationDays Int
+  priceCents   Int
+  currency     String           @default("EUR")
+  coverUrl     String?
+  gallery      Json?
+  itinerary    Json? // { day, title, text }[]
+  includes     Json? // string[]
+  published    Boolean          @default(true)
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+  sessions     ProgramSession[]
+}
+
+model ProgramSession {
+  id        String    @id @default(cuid())
+  programId String
+  program   Program   @relation(fields: [programId], references: [id])
+  startDate DateTime
+  endDate   DateTime
+  capacity  Int
+  bookings  Booking[]
+
+  @@index([programId])
+}
+
+enum BookingStatus {
+  PENDING
+  DEPOSIT_PAID
+  PAID
+  CANCELLED
+}
+
+model Booking {
+  id           String         @id @default(cuid())
+  sessionId    String
+  session      ProgramSession @relation(fields: [sessionId], references: [id])
+  userId       String
+  user         User           @relation(fields: [userId], references: [id])
+  participants Int            @default(1)
+  notes        String?        @db.Text
+  status       BookingStatus  @default(PENDING)
+  totalCents   Int
+  paidCents    Int            @default(0)
+  balanceReminderAt DateTime?
+  currency     String         @default("EUR")
+  createdAt    DateTime       @default(now())
+
+  @@index([sessionId])
+  @@index([userId])
+}
+
+model Event {
+  id            String              @id @default(cuid())
+  slug          String              @unique
+  title         String
+  subtitle      String?
+  description   String              @db.Text
+  location      String
+  startsAt      DateTime
+  endsAt        DateTime
+  coverUrl      String?
+  priceCents    Int                 @default(0)
+  currency      String              @default("EUR")
+  capacity      Int                 @default(100)
+  published     Boolean             @default(true)
+  createdAt     DateTime            @default(now())
+  registrations EventRegistration[]
+}
+
+model EventRegistration {
+  id         String   @id @default(cuid())
+  eventId    String
+  event      Event    @relation(fields: [eventId], references: [id])
+  userId     String
+  user       User     @relation(fields: [userId], references: [id])
+  seats      Int      @default(1)
+  status     String   @default("PENDING") // PENDING | PAID | CANCELLED
+  totalCents Int
+  checkedInAt DateTime?
+  createdAt  DateTime @default(now())
+
+  @@index([eventId])
+  @@index([userId])
+}
+
+model Article {
+  id          String    @id @default(cuid())
+  slug        String    @unique
+  title       String
+  excerpt     String    @db.Text
+  body        String    @db.LongText
+  coverUrl    String?
+  category    String    @default("enseignement")
+  published   Boolean   @default(true)
+  publishedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model OduContent {
+  oduId     Int      @id
+  summary   String?  @db.Text
+  keywords  Json?
+  body      String?  @db.LongText
+  updatedAt DateTime @updatedAt
+}
+
+/// Interprétation d'un Odu dans un domaine de vie, écrite par le prêtre (plan, étape 5.9). Seuls les textes publiés sont montrés.
+model OduDomainText {
+  oduId     Int
+  domain    String // amour | argent | sante | famille | installation | spirituel | enfants
+  text      String   @db.LongText
+  published Boolean  @default(false)
+  updatedAt DateTime @updatedAt
+
+  @@id([oduId, domain])
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCEEDED
+  FAILED
+  REFUNDED
+}
+
+model Payment {
+  id          String        @id @default(cuid())
+  userId      String
+  user        User          @relation(fields: [userId], references: [id])
+  purpose     String // CONSULTATION | EBO | BOOKING | EVENT
+  refId       String
+  amountCents Int
+  currency    String
+  provider    String // STRIPE | FEDAPAY
+  providerRef String?
+  status      PaymentStatus @default(PENDING)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  @@index([userId])
+  @@index([refId])
+  @@index([providerRef])
+}
+
+model ContactMessage {
+  id        String   @id @default(cuid())
+  name      String
+  email     String
+  subject   String
+  message   String   @db.Text
+  createdAt DateTime @default(now())
+}
+
+/// Textes du portrait remplacés par le prêtre (plan étape 4.4). Seuls les textes validés sont utilisés.
+model PortraitText {
+  key       String   @id @db.VarChar(120)
+  value     String   @db.Text
+  validated Boolean  @default(false)
+  updatedAt DateTime @updatedAt
+}
+
+/// Étape 2.3 : chaque écriture admin (qui, quoi, quand, avant / après).
+model AuditLog {
+  id        String   @id @default(cuid())
+  actorId   String
+  actorName String
+  actorRole String
+  action    String // CREATE | UPDATE | DELETE
+  entity    String // ex. consultation, ebo, programme
+  entityId  String?
+  path      String
+  before    Json?
+  after     Json?
+  ip        String?
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([actorId])
+  @@index([entity])
+}
+
+/// Étape 2.1 : paramètres modifiables dans Admin › Paramètres (police, taux, acompte).
+model Setting {
+  key       String   @id @db.VarChar(80)
+  value     Json
+  updatedAt DateTime @updatedAt
+}
+
+/// Étape 2.1 : la cloche des espaces client et admin.
+model Notification {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id])
+  title     String
+  body      String?   @db.Text
+  href      String?
+  readAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId, readAt])
+}
+
+/// Plan §15.2 : preuve de chaque consentement (données sensibles, CGU).
+model ConsentLog {
+  id        String   @id @default(cuid())
+  userId    String?
+  kind      String // PORTRAIT | CONSULTATION | CGU
+  refId     String?
+  version   String
+  ip        String?
+  userAgent String?  @db.Text
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([kind])
+}
+
+/// Étape 2.2 : jeton de renouvellement (cookie httpOnly), stocké haché, révocable, à rotation.
+model RefreshToken {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id])
+  tokenHash String    @unique @db.VarChar(64)
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
+}

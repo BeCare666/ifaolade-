@@ -1,0 +1,14 @@
+node_modules
+dist
+.next
+.env
+.env.local
+*.log
+.env.*
+!.env.example
+*.tsbuildinfo
+.vercel
+.turbo
+coverage
+apps/api/env.txt
+**/env.txt

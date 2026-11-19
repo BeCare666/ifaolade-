@@ -1,0 +1,17 @@
+{
+  "name": "ona-ifa",
+  "private": true,
+  "version": "1.0.0",
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "build:core": "npm run build -w @ona/core",
+    "build": "npm run build:core && npm run build -w @ona/api && npm run build -w @ona/web",
+    "dev:api": "npm run start:dev -w @ona/api",
+    "dev:web": "npm run dev -w @ona/web",
+    "db:push": "npm run db:push -w @ona/api",
+    "db:seed": "npm run db:seed -w @ona/api"
+  }
+}
