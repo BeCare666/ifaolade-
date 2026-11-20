@@ -1,10 +1,11 @@
 'use client';
 
-import { oduBySlug } from '@ona/core';
+import { defaultLore, oduBySlug, type LoreOverride, type OduLore } from '@ona/core';
 import { ExternalLink } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { OduDomainEditor } from '@/components/admin/odu-domain-editor';
+import { OduLoreEditor } from '@/components/admin/odu-lore-editor';
 import { OduGlyph } from '@/components/odu/odu-glyph';
 import { Markdown } from '@/components/site/markdown';
 import { Button } from '@/components/ui/button';
@@ -16,7 +17,7 @@ import { apiSend } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { useApi } from '@/lib/use-api';
 
-interface Detail { id: number; essence: string; teaching: string | null; keywords: string[] }
+interface Detail { id: number; essence: string; teaching: string | null; keywords: string[]; lore?: OduLore; loreOverride?: LoreOverride | null }
 
 /** Contenu d'un Odu rédigé par le prêtre (plan §9.3). Le texte par défaut du moteur sert de point de départ. */
 export function OduEditor({ slug }: { slug: string }) {
@@ -69,13 +70,16 @@ export function OduEditor({ slug }: { slug: string }) {
             <Button shape="console" loading={busy} onClick={async () => {
               setBusy(true);
               try {
-                await apiSend(`/admin/odu/${odu.id}`, { summary: summary.trim() || undefined, keywords: keywords.split(',').map((k) => k.trim()).filter(Boolean), body: body.trim() || undefined }, 'PUT', token);
+                // Enseignement identique au texte de départ : rien n'est figé en base, le texte de départ reste utilisé.
+                const b = body.trim();
+                await apiSend(`/admin/odu/${odu.id}`, { summary: summary.trim() || undefined, keywords: keywords.split(',').map((k) => k.trim()).filter(Boolean), body: b === defaultLore(odu).teaching ? '' : b }, 'PUT', token);
                 toast('Enseignement enregistré. La fiche publique se met à jour sous 10 minutes.');
                 reload();
               } catch (e) { toast((e as Error).message, 'error'); } finally { setBusy(false); }
             }}>Enregistrer</Button>
           </div>
         </Card>
+        <OduLoreEditor odu={odu} lore={data.lore ?? defaultLore(odu)} override={data.loreOverride ?? null} onSaved={reload} />
         <OduDomainEditor oduId={odu.id} isMeji={odu.isMeji} />
         </div>
         <Card className="flex flex-col items-center p-6 text-center lg:sticky lg:top-24">

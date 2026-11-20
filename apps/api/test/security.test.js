@@ -228,7 +228,7 @@ function authHarness(row) {
 }
 
 test('refresh : rotation du jeton, cookie httpOnly, ancien jeton révoqué', async () => {
-  const user = { id: 'A', role: 'CLIENT', email: 'a@x.io', firstName: 'Ama' };
+  const user = { id: 'A', role: 'CLIENT', email: 'a@x.io', firstName: 'Ama', emailVerified: true };
   const h = authHarness({ id: 'RT1', userId: 'A', revokedAt: null, expiresAt: new Date(Date.now() + 86400_000), user });
   const out = await h.svc.refresh(h.req('JETON'), h.res);
   assert.ok(out.token && out.user.id === 'A');
@@ -246,4 +246,56 @@ test('refresh : un jeton déjà révoqué réutilisé ferme toutes les sessions 
   assert.equal(h.cookies.cleared, 1);
   const none = authHarness(null);
   await assert.rejects(none.svc.refresh(none.req(null), none.res), is(UnauthorizedException));
+});
+
+// ---------- Correction du 2026-11-19 : confirmation de l'email obligatoire ----------
+// AuthService déjà importé plus haut
+const bcrypt = require('bcryptjs');
+
+function authFixture(user) {
+  const rows = { user: user ? { ...user } : null };
+  const prisma = {
+    user: {
+      findUnique: async () => rows.user,
+      findFirst: async ({ where }) => (rows.user.emailToken === where.emailToken ? rows.user : null),
+      create: async ({ data }) => (rows.user = { id: 'N', role: 'CLIENT', emailVerified: false, createdAt: new Date(), ...data }),
+      update: async ({ data }) => Object.assign(rows.user, data),
+    },
+    reading: { updateMany: async () => ({ count: 0 }) },
+    refreshToken: { create: async () => ({}) },
+  };
+  const mailbox = [];
+  const svc = new AuthService(prisma, new JwtService({ secret: 'x'.repeat(40) }), { send: async (to, s, html) => mailbox.push({ to, html }), layout: (a, b, c) => c.url, web: 'http://w' }, { record: async () => {}, claim: async () => {} });
+  return { svc, rows, mailbox };
+}
+const res = { cookie: () => {}, clearCookie: () => {} };
+
+test('inscription : aucune session, email de confirmation envoyé', async () => {
+  const { svc, mailbox } = authFixture(null);
+  const r = await svc.register({ email: 'X@x.io', password: 'motdepasse', firstName: 'X', acceptCgu: true }, { headers: {}, ip: '1' }, res);
+  assert.equal(r.token, undefined);
+  assert.ok(r.verificationRequired);
+  assert.ok(mailbox[0].html.includes('/verifier-email?token='));
+});
+
+test('connexion refusée tant que l’email n’est pas confirmé ; lien cliquable deux fois', async () => {
+  const { svc, rows } = authFixture({ id: 'U', email: 'u@x.io', firstName: 'U', role: 'CLIENT', emailVerified: false, emailToken: 'tok', passwordHash: await bcrypt.hash('motdepasse', 4), createdAt: new Date() });
+  await assert.rejects(svc.login({ email: 'u@x.io', password: 'motdepasse' }, res), is(ForbiddenException));
+  assert.ok((await svc.verify('tok')).ok);
+  assert.ok((await svc.verify('tok')).ok, 'le second clic ne doit pas afficher « lien expiré »');
+  assert.equal(rows.user.emailVerified, true);
+  assert.ok((await svc.login({ email: 'u@x.io', password: 'motdepasse' }, res)).token);
+});
+
+// ---------- R13 : contenu traditionnel des Odu modifiable dans l'admin ----------
+const { cleanLore } = require('../dist/odu/odu.controller');
+
+test('contenu traditionnel : seules les clés connues entrent en base, aux bons types', () => {
+  const out = cleanLore({
+    oriki: '  Mon éloge  ', orisha: ['Ọbàtálá', '', 42, '  Orí '], hack: 'x', teaching: 7,
+    birth: { colors: ['Blanc'], nature: '', evil: ['x'], todo: 'pas une liste' },
+  });
+  assert.deepStrictEqual(out, { oriki: 'Mon éloge', orisha: ['Ọbàtálá', 'Orí'], birth: { colors: ['Blanc'] } });
+  assert.deepStrictEqual(cleanLore(null), {});
+  assert.strictEqual(cleanLore({ lessons: Array.from({ length: 50 }, (_, i) => `l${i}`) }).lessons.length, 20);
 });

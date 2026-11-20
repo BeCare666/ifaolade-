@@ -2,6 +2,8 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { SiteFooter } from '@/components/site/footer';
 import { SiteHeader } from '@/components/site/header';
+import { SiteBottomNav } from '@/components/site/site-bottom-nav';
+import { WelcomeSheet } from '@/components/site/welcome-sheet';
 import { getDict, isLang, LANGS } from '@/i18n';
 import { LangProvider } from '@/i18n/client';
 import { pageMeta } from '@/i18n/server';
@@ -35,6 +37,8 @@ export default async function SiteLayout({ children, params }: { children: React
       <SiteHeader />
       <main id="contenu">{children}</main>
       <SiteFooter />
+      <SiteBottomNav />
+      <WelcomeSheet />
       </SiteDataProvider>
     </LangProvider>
   );

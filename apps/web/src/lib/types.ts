@@ -72,7 +72,11 @@ export interface OduTeaching {
   essence: string;
   teaching: string | null;
   keywords: string[];
+  /** Contenu traditionnel (texte de départ + modifications du prêtre). */
+  lore?: import('@ona/core').OduLore;
+  loreOverride?: import('@ona/core').LoreOverride | null;
 }
+export interface OduDomainReading { domain: string; own: string | null; right: string | null; left: string | null }
 
 // ---------- Phase 5 : consultations ----------
 export type ConsultationStatus = 'REQUESTED' | 'AWAITING_PAYMENT' | 'CONFIRMED' | 'COMPLETED' | 'CANCELLED';

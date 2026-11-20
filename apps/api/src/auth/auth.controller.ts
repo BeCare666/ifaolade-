@@ -1,7 +1,7 @@
 import { Body, Controller, Get, Post, Query, Req, Res } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import { Request, Response } from 'express';
-import { ForgotDto, LoginDto, RegisterDto, ResetDto } from './auth.dto';
+import { ForgotDto, LoginDto, RegisterDto, ResendDto, ResetDto } from './auth.dto';
 import { AuthService } from './auth.service';
 
 @Throttle({ default: { ttl: 60_000, limit: 10 } })
@@ -24,6 +24,8 @@ export class AuthController {
   logout(@Req() req: Request, @Res({ passthrough: true }) res: Response) { return this.auth.logout(req, res); }
 
   @Get('verify') verify(@Query('token') t: string) { return this.auth.verify(t); }
+  @Throttle({ default: { ttl: 60_000, limit: 3 } })
+  @Post('resend') resend(@Body() dto: ResendDto) { return this.auth.resend(dto); }
   @Post('forgot') forgot(@Body() dto: ForgotDto) { return this.auth.forgot(dto); }
   @Post('reset') reset(@Body() dto: ResetDto) { return this.auth.reset(dto); }
 }

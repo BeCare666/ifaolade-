@@ -36,7 +36,8 @@ export function useRequireAuth(next: string, staff = false) {
   const { user, ready } = useAuth();
   const allowed = !!user && (!staff || user.role === 'ADMIN' || user.role === 'PRIEST');
   useEffect(() => {
-    if (ready && !user) window.location.replace(`/connexion?suite=${encodeURIComponent(next)}`);
-  }, [ready, user, next]);
+    // Le prêtre et l'administration se connectent par la console (/console), les clients par /connexion.
+    if (ready && !user) window.location.replace(`${staff ? '/console' : '/connexion'}?suite=${encodeURIComponent(next)}`);
+  }, [ready, user, next, staff]);
   return { ready: ready && !!user, allowed, user };
 }

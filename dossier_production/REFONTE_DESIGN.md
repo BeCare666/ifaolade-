@@ -244,6 +244,36 @@ Après la dernière question de « Connais-toi », avant le portrait :
 4. Durée **6 secondes** au minimum, même si le calcul est plus rapide ; le portrait apparaît ensuite en fondu.
 5. Accessibilité : texte lu par les lecteurs d'écran (« Analyse en cours »), animation réduite si « réduire les animations » est activé.
 
+## 11 ter. Les Odu complets, remplis par défaut (étape R13, demandée le 2026-11-20)
+
+Chaque fiche d'Odu montre, **remplis par défaut et modifiables dans l'admin** (Admin › Odu › fiche) :
+
+| Bloc | Contenu |
+|---|---|
+| **Éloge** | texte d'éloge de l'Odu (en français ; aucun vers yoruba inventé) |
+| **Qui parle dans cet Odu** | Òrìṣà (tradition yoruba) et Vodun (Fá du Bénin) |
+| **Leçons de vie** | 4 à 5 leçons |
+| **Enseignement** | texte Markdown |
+| **Selon le domaine** | les 7 domaines (textes déjà publiés pour les Méjì ; pour un Ọmọ Odù sans texte propre, ceux de ses deux Méjì, présentés comme tels) |
+| **Si c'est ton signe de naissance** | ce que tu es, ce qui se dessine pour ta vie, ce que tu dois faire, ce que tu dois éviter, ce qu'il est conseillé de manger, tes interdits alimentaires (èèwọ̀), les divinités à honorer, tes couleurs |
+
+Règles :
+1. Les textes de départ des **16 Méjì** sont écrits dans `packages/core/src/odu/lore.ts`. Pour les **240 Ọmọ Odù**, ils sont composés à partir des deux Méjì : la jambe droite gouverne, la jambe gauche nuance. Chaque champ modifié dans l'admin remplace le texte de départ (colonne `OduContent.lore`). Un bouton « Revenir au texte de départ » efface la modification.
+2. Le bloc « signe de naissance » apparaît sur la fiche de l'Odu **et** dans le portrait, sous la signature. Il garde la mention de la règle 4.7 (signature calculée et symbolique, qui ne remplace pas le Kpɔ̀lí) et ne promet rien (règle 4.6).
+3. Mention sous les blocs traditionnels : « Texte traditionnel de départ : chaque lignée a ses nuances, ton babaláwo le précise en consultation. »
+4. Les textes de départ sont en français ; en anglais et en yoruba, la mention « contenu en français » s'affiche.
+5. Relecture du prêtre : `TEXTES_ODU_TRADITION.md` reprend les 16 Méjì.
+
+**Terminé quand** : les 256 fiches affichent les 6 blocs sans aucun « en cours de rédaction », chaque champ est modifiable dans l'admin, et le portrait affiche la lecture de naissance.
+
+## 11 quater. Fenêtre d'accueil (étape R14, demandée le 2026-11-20)
+
+1. À la **première visite** sur la vitrine, une fenêtre transparente (fond indigo translucide flouté) monte du bas de l'écran.
+2. Elle porte **trois grands boutons ronds avec icône, disposés en demi-cercle** (celui du milieu plus haut) : **Connais-toi** (`/connais-toi`), **Faire une consultation** (`/consultations/reserver?offre=FIRST_FREE`), **Les Odu** (`/odu`). Un clic mène à la page.
+3. Elle se ferme avec la croix, la touche Échap ou un clic à côté. Elle ne s'affiche plus ensuite (mémorisé dans le navigateur). Elle n'apparaît pas sur les pages de connexion, d'inscription, de la console et de confirmation d'email.
+4. Trois langues ; « réduire les animations » respecté ; le focus va au premier bouton.
+
+
 ## 12. Contrôles de fin (étape R11)
 
 1. `npm test` (core, api) et `next build` sans erreur.
@@ -275,5 +305,8 @@ R0 tokens et polices → R1 logo → R2 en-tête → R3 drawer → R4 pied de pa
 | R7 admin › Apparence (images, babaláwo, textes FR/EN/YO, réseaux et contacts) + données Odu modifiables | ✅ API testée (25/25) |
 | R9 espace client premium · R10 admin premium | ✅ |
 | R12 vue d'analyse du portrait (6 s, plein écran) | ✅ |
-| R8 images de départ | ⏳ attend ta validation de la liste |
+| R13 Odu complets (éloge, Òrìṣà et Vodun, leçons, enseignement, 7 domaines, signe de naissance sur la fiche et dans le portrait), modifiables dans Admin › Odu › fiche | ✅ core 25/25, API 28/28, colonne `lore` poussée sur TiDB. ⏳ relecture du prêtre : `TEXTES_ODU_TRADITION.md` |
+| R14 fenêtre d'accueil (demi-cercle translucide, 3 boutons : Connais-toi, Consultation, Les Odu), une seule fois | ✅ |
+| R8 images de départ : 16 emplacements remplis (11 photos Unsplash vérifiées : cauris, indigo, jarres, forêt, village lacustre, marché, Cotonou, lagune), remplaçables dans Admin › Apparence › Images, « Revenir à l’image de départ » | ✅ ⏳ à remplacer par tes vraies photos (prêtre, ọpọ́n, temple) |
+| Corrections du 2026-11-19 : email à confirmer avant toute connexion (page « email envoyé », renvoi du lien, lien recliquable sans erreur), console du prêtre `/console` (redirige vers `/admin`, refuse les clients), menu de langue qui s’ouvre sur ordinateur, barre basse mobile sur toute la vitrine | ✅ API 27/27 + build |
 | R11 contrôles : typage ✅ ; compilation complète interrompue (mémoire du PC insuffisante) ; contrôle visuel à faire | ⏳ |

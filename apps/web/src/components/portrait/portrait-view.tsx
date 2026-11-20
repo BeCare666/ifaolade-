@@ -1,16 +1,19 @@
 'use client';
 
-import { SIGNS, signName, type Reading } from '@ona/core';
+import { defaultLore, oduBySlug, SIGNS, signName, type Reading } from '@ona/core';
 import { HeartPulse, Lock } from 'lucide-react';
 import Link from 'next/link';
 import { Fragment } from 'react';
 import { ElementBalance } from '@/components/astro/element-balance';
 import { NatalWheel } from '@/components/astro/natal-wheel';
 import { OduGlyph } from '@/components/odu/odu-glyph';
+import { BirthReading } from '@/components/odu/odu-lore';
 import { Reveal } from '@/components/site/editorial';
 import { ButtonLink } from '@/components/ui/button';
 import { tpl } from '@/i18n';
 import { useI18n } from '@/i18n/client';
+import type { OduTeaching } from '@/lib/types';
+import { useApi } from '@/lib/use-api';
 
 type Section = Reading['sections'][number] & { locked?: boolean };
 
@@ -34,6 +37,10 @@ export function PortraitView({
   const unlockHref = href(readingId ? `/inscription?portrait=${readingId}` : '/inscription');
   const loginHref = href(readingId ? `/connexion?portrait=${readingId}` : '/connexion');
   const health = reading.domain === 'sante' || reading.domain === 'enfants';
+  // Lecture « signe de naissance » (R13) : modifications du prêtre si l'API répond, sinon texte de départ.
+  const { data: oduContent } = useApi<OduTeaching>(full ? `/odu/${reading.odu.slug}` : null);
+  const baseOdu = oduBySlug(reading.odu.slug);
+  const birthLore = oduContent?.lore ?? (baseOdu ? defaultLore(baseOdu) : null);
   const deg = (x: number) => `${Math.floor(x)}°${String(Math.floor((x % 1) * 60)).padStart(2, '0')}′`;
 
   return (
@@ -111,6 +118,16 @@ export function PortraitView({
           </Fragment>
         ))}
       </div>
+
+      {full && birthLore && (
+        <section className="mt-4 max-w-3xl border-t border-border py-12">
+          <h2 className="text-card-title text-text">{D.odu.lore.birthPortrait}</h2>
+          <p className="mt-1.5 text-[13px] text-text-faint">{reading.odu.name} · {tpl(d.fa, { name: reading.odu.fonName })}</p>
+          <div className="mt-6"><BirthReading lore={birthLore} l={D.odu.lore} /></div>
+          <p className="mt-6 text-[12px] text-text-faint">{D.odu.lore.traditionNote}{lang !== 'fr' ? ` ${D.common.contentFr}` : ''}</p>
+          <Link href={href(`/odu/${reading.odu.slug}`)} className="mt-4 inline-block text-[14px] text-primary underline underline-offset-4">{tpl(D.odu.lore.seeOdu, { name: reading.odu.name })}</Link>
+        </section>
+      )}
 
       {full && (
         <div className="mt-10 max-w-3xl rounded-[var(--radius-photo)] bg-primary p-8 text-primary-foreground sm:p-10">

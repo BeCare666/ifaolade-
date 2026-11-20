@@ -307,6 +307,8 @@ model OduContent {
   summary   String?  @db.Text
   keywords  Json?
   body      String?  @db.LongText
+  /// Contenu traditionnel modifié par le prêtre (éloge, Òrìṣà, Vodun, leçons, signe de naissance) : remplace champ par champ le texte de départ (core, lore.ts).
+  lore      Json?
   updatedAt DateTime @updatedAt
 }
 

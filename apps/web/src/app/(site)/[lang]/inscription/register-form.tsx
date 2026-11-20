@@ -7,7 +7,6 @@ import { Button } from '@/components/ui/button';
 import { Checkbox, Field, Input } from '@/components/ui/field';
 import { ErrorState } from '@/components/ui/primitives';
 import { useI18n } from '@/i18n/client';
-import { apiSend } from '@/lib/api';
 import { safeNext, useAuth } from '@/lib/auth';
 
 export function RegisterForm({ next, portrait }: { next?: string; portrait?: string }) {
@@ -42,16 +41,14 @@ export function RegisterForm({ next, portrait }: { next?: string; portrait?: str
         setBusy(true);
         setError(null);
         try {
-          const session = await register({
+          const r = await register({
             email: form.email, password: form.password, firstName: form.firstName,
-            lastName: form.lastName || undefined, country: form.country || undefined,
+            lastName: form.lastName || undefined, country: form.country || undefined, readingId: portrait || undefined,
           });
-          if (portrait) {
-            await apiSend(`/readings/${portrait}/claim`, {}, 'POST', session.token).catch(() => undefined);
-            router.push(href(`/connais-toi/portrait/${portrait}?bienvenue=1`));
-          } else {
-            router.push(safeNext(next));
-          }
+          // L'adresse n'est jamais mise dans l'URL : elle reste dans ce navigateur, le temps de la confirmation.
+          try { sessionStorage.setItem('ifaolade:pending-email', r.email); } catch { /* navigation privée */ }
+          const after = portrait ? `/connais-toi/portrait/${portrait}` : safeNext(next);
+          router.push(href(`/verifier-email/envoye?suite=${encodeURIComponent(after)}`));
         } catch (err) {
           setError((err as Error).message);
           setBusy(false);

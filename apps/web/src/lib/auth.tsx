@@ -24,7 +24,7 @@ interface AuthState {
   token: string | null;
   ready: boolean;
   login: (email: string, password: string) => Promise<Session>;
-  register: (dto: { email: string; password: string; firstName: string; lastName?: string; country?: string }) => Promise<Session>;
+  register: (dto: { email: string; password: string; firstName: string; lastName?: string; country?: string; readingId?: string }) => Promise<{ email: string }>;
   logout: () => Promise<void>;
   refresh: () => Promise<void>;
 }
@@ -69,9 +69,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return s;
     },
     async register(dto) {
-      const s = await apiSend<Session>('/auth/register', { ...dto, acceptCgu: true });
-      setToken(s.token); setUser(s.user);
-      return s;
+      // Aucune session à l'inscription : la connexion n'est possible qu'après confirmation de l'email.
+      return apiSend<{ email: string }>('/auth/register', { ...dto, acceptCgu: true });
     },
     async logout() {
       await apiSend('/auth/logout', {}, 'POST').catch(() => undefined);

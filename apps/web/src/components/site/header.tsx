@@ -24,7 +24,7 @@ export function BrandMark({ inverse = false, variant = 'compact' }: { inverse?: 
 }
 
 /** Sélecteur de langue : même page, autre langue (étape 6.4). */
-export function LangSwitcher({ compact = false, dark = false }: { compact?: boolean; dark?: boolean }) {
+export function LangSwitcher({ compact = false, dark = false, up = false }: { compact?: boolean; dark?: boolean; up?: boolean }) {
   const pathname = usePathname() || '/';
   const { lang, d } = useI18n();
   const { path } = splitPath(pathname);
@@ -55,7 +55,7 @@ export function LangSwitcher({ compact = false, dark = false }: { compact?: bool
         <Globe size={14} strokeWidth={1.7} /> {lang.toUpperCase()} <ChevronDown size={12} />
       </button>
       {open && (
-        <ul className="absolute right-0 z-[80] mt-2 w-44 overflow-hidden rounded-[var(--radius-md)] border border-border bg-surface py-1 shadow-[var(--shadow-elevated)]">
+        <ul className={cn('absolute right-0 z-[80] w-44 overflow-hidden rounded-[var(--radius-md)] border border-border bg-surface py-1 shadow-[var(--shadow-elevated)]', up ? 'bottom-full mb-2' : 'mt-2')}>
           {LANGS.map((l) => (
             <li key={l}>
               <Link href={lp(l, path)} hrefLang={l} onClick={() => setOpen(false)} className={cn('flex items-center justify-between px-4 py-2.5 text-[14px]', l === lang ? 'font-medium text-primary' : 'text-text-muted hover:bg-bg-subtle hover:text-text')}>
@@ -204,7 +204,7 @@ export function SiteHeader() {
   return (
     <>
       {/* Barre de service */}
-      <div className="relative hidden overflow-hidden bg-night text-kaolin sm:block">
+      <div className="relative z-[55] hidden bg-night text-kaolin sm:block">
         <Adire kind="zigzag" opacity={0.06} />
         <div className="relative mx-auto flex h-9 max-w-7xl items-center justify-between gap-4 px-8">
           <Link href={freeHref} className="inline-flex items-center gap-2 text-[12px] tracking-[0.04em] text-kaolin/85 transition-colors hover:text-kaolin">

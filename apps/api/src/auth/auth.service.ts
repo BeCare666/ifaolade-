@@ -1,4 +1,4 @@
-import { BadRequestException, ConflictException, Injectable, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, ConflictException, Injectable, UnauthorizedException, ForbiddenException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { User } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
@@ -8,7 +8,7 @@ import { ConsentService } from '../common/consent.service';
 import { PrismaService } from '../common/prisma.service';
 import { token } from '../common/util';
 import { MailService } from '../mail/mail.service';
-import { ForgotDto, LoginDto, RegisterDto, ResetDto } from './auth.dto';
+import { ForgotDto, LoginDto, RegisterDto, ResendDto, ResetDto } from './auth.dto';
 
 export const publicUser = (u: User) => ({
   id: u.id, email: u.email, firstName: u.firstName, lastName: u.lastName, phone: u.phone,
@@ -72,17 +72,42 @@ export class AuthService {
       },
     });
     await this.consent.record('CGU', req, user.id);
-    await this.mail.send(email, 'Bienvenue, confirme ton email', this.mail.layout(
-      `Ẹ kú àbọ̀, ${user.firstName}`,
-      '<p>Ton espace est créé. Confirme ton email pour sécuriser ton dossier spirituel et activer ta <b>première consultation offerte</b>.</p>',
+    // Portrait anonyme fait juste avant l'inscription : rattaché tout de suite (la personne ne se connecte qu'après confirmation).
+    if (dto.readingId) {
+      const attached = await this.prisma.reading.updateMany({ where: { id: dto.readingId, userId: null }, data: { userId: user.id } });
+      if (attached.count) await this.consent.claim(dto.readingId, user.id);
+    }
+    await this.sendVerification(user.email, user.firstName, emailToken);
+    // Aucune session : la connexion n'est possible qu'une fois l'email confirmé.
+    void res;
+    return { ok: true, email: user.email, verificationRequired: true };
+  }
+
+  private async sendVerification(email: string, firstName: string, emailToken: string) {
+    await this.mail.send(email, 'Confirme ton email pour ouvrir ton espace', this.mail.layout(
+      `Ẹ kú àbọ̀, ${firstName}`,
+      '<p>Ton compte est créé. Clique sur le bouton ci-dessous pour confirmer ton email : tu pourras ensuite te connecter, retrouver ton portrait et réserver ta <b>première consultation offerte</b>.</p>',
       { label: 'Confirmer mon email', url: `${this.mail.web}/verifier-email?token=${emailToken}` },
-    ), user.firstName);
-    return this.session(user, res);
+    ), firstName);
+  }
+
+  /** Renvoi du lien de confirmation. Réponse identique que le compte existe ou non (aucune fuite d'information). */
+  async resend(dto: ResendDto) {
+    const user = await this.prisma.user.findUnique({ where: { email: dto.email.toLowerCase().trim() } });
+    if (user && !user.emailVerified) {
+      const emailToken = user.emailToken ?? token();
+      if (!user.emailToken) await this.prisma.user.update({ where: { id: user.id }, data: { emailToken } });
+      await this.sendVerification(user.email, user.firstName, emailToken);
+    }
+    return { ok: true };
   }
 
   async login(dto: LoginDto, res: Response) {
     const user = await this.prisma.user.findUnique({ where: { email: dto.email.toLowerCase().trim() } });
     if (!user || !(await bcrypt.compare(dto.password, user.passwordHash))) throw new UnauthorizedException('Email ou mot de passe incorrect');
+    if (!user.emailVerified) {
+      throw new ForbiddenException({ statusCode: 403, code: 'EMAIL_NOT_VERIFIED', message: 'Confirme d\'abord ton email : clique sur le lien que nous t\'avons envoyé.' });
+    }
     return this.session(user, res);
   }
 
@@ -98,6 +123,7 @@ export class AuthService {
       throw new UnauthorizedException('Session révoquée, reconnecte-toi');
     }
     if (row.expiresAt < new Date()) { this.clearCookie(res); throw new UnauthorizedException('Session expirée'); }
+    if (!row.user.emailVerified) { this.clearCookie(res); throw new UnauthorizedException('Confirme d\'abord ton email'); }
     await this.prisma.refreshToken.update({ where: { id: row.id }, data: { revokedAt: new Date() } });
     return this.session(row.user, res);
   }
@@ -112,9 +138,10 @@ export class AuthService {
   async verify(t: string) {
     if (!t) throw new BadRequestException('Lien invalide');
     const user = await this.prisma.user.findFirst({ where: { emailToken: t } });
-    if (!user) throw new BadRequestException('Lien invalide ou déjà utilisé');
-    await this.prisma.user.update({ where: { id: user.id }, data: { emailVerified: true, emailToken: null } });
-    return { ok: true };
+    if (!user) throw new BadRequestException('Ce lien n\'est pas valide. Demande un nouvel email de confirmation depuis la page de connexion.');
+    // Idempotent : le jeton est conservé, cliquer deux fois sur le lien (ou une page rechargée) confirme sans erreur.
+    if (!user.emailVerified) await this.prisma.user.update({ where: { id: user.id }, data: { emailVerified: true } });
+    return { ok: true, email: user.email };
   }
 
   async forgot(dto: ForgotDto) {

@@ -50,19 +50,32 @@ async function call(method, path, body, token) {
   const locked = reading.reading.sections.filter((s) => s.locked);
   expect(!reading.full && locked.length > 0 && locked.every((s) => !s.paragraphs.length), `portrait anonyme : aperçu visible, ${locked.length} sections verrouillées`);
 
-  // Inscription (ou connexion si le compte test existe déjà)
-  let auth;
-  try { auth = await call('POST', '/auth/register', { email: EMAIL, password: PASSWORD, firstName: 'Test', lastName: 'Parcours', country: 'France', acceptCgu: true }); ok('inscription (email de bienvenue envoyé)'); }
-  catch (e) { if (!/existe déjà/.test(e.message)) throw e; auth = await call('POST', '/auth/login', { email: EMAIL, password: PASSWORD }); ok('compte test déjà existant : connexion'); }
+  // Inscription : aucune session tant que l'email n'est pas confirmé (correction du 2026-11-19)
+  let created = false;
+  try {
+    const r = await call('POST', '/auth/register', { email: EMAIL, password: PASSWORD, firstName: 'Test', lastName: 'Parcours', country: 'France', acceptCgu: true, readingId: reading.id });
+    expect(r.verificationRequired && !r.token, 'inscription : email de confirmation envoyé, aucune session ouverte');
+    created = true;
+  } catch (e) { if (!/existe déjà/.test(e.message)) throw e; ok('compte test déjà existant'); }
+
+  if (created) {
+    try { await call('POST', '/auth/login', { email: EMAIL, password: PASSWORD }); throw new Error('connexion acceptée sans confirmation'); }
+    catch (e) { expect(/Confirme/.test(e.message), 'connexion refusée tant que l\'email n\'est pas confirmé'); }
+  }
+
+  // Clic sur le lien de confirmation (simulé : lecture du jeton en base), deux fois : le second clic ne doit pas échouer
+  const u = await prisma.user.findUnique({ where: { email: EMAIL.toLowerCase() } });
+  if (u.emailToken) {
+    await call('GET', `/auth/verify?token=${u.emailToken}`);
+    await call('GET', `/auth/verify?token=${u.emailToken}`);
+    ok('lien de confirmation : deux clics, aucune erreur');
+  }
+  const auth = await call('POST', '/auth/login', { email: EMAIL, password: PASSWORD });
   const T = auth.token;
+  expect((await call('GET', '/me', undefined, T)).emailVerified, 'email confirmé, connexion ouverte');
 
   const claimed = await call('POST', `/readings/${reading.id}/claim`, {}, T);
   expect(claimed.full && claimed.reading.sections.every((s) => s.paragraphs.length > 0), 'portrait rattaché au compte et entièrement déverrouillé');
-
-  // Clic sur le lien de confirmation (simulé : lecture du jeton en base)
-  const u = await prisma.user.findUnique({ where: { email: EMAIL.toLowerCase() } });
-  if (!u.emailVerified) await call('GET', `/auth/verify?token=${u.emailToken}`);
-  expect((await call('GET', '/me', undefined, T)).emailVerified, 'email confirmé (lien simulé)');
 
   // Consultation offerte (par écrit)
   let free;

@@ -9,6 +9,12 @@ export class RegisterDto {
   @IsOptional() @IsString() phone?: string;
   /** Acceptation des CGU et de la politique de confidentialité (preuve dans ConsentLog). */
   @IsIn([true]) acceptCgu: boolean;
+  /** Portrait « Connais-toi » anonyme à rattacher au nouveau compte (il ne se connecte qu'après confirmation). */
+  @IsOptional() @IsString() @MaxLength(40) readingId?: string;
+}
+
+export class ResendDto {
+  @IsEmail() email: string;
 }
 
 export class LoginDto {

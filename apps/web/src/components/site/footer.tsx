@@ -69,7 +69,7 @@ export function SiteFooter() {
             </div>
             <div className="flex items-center gap-4">
               <span className="hidden xl:inline">{d.footer.promise}</span>
-              <LangSwitcher />
+              <LangSwitcher up />
             </div>
           </div>
         </div>
