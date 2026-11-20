@@ -1,3 +1,4 @@
+import { makeDivinityLinker } from '@ona/core';
 export interface Offer {
   id: string;
   code: 'FIRST_FREE' | 'VIDEO' | 'ASSISTED' | string;
@@ -160,3 +161,8 @@ export interface LibraryBrief {
   category: string; coverUrl: string | null; meta: Record<string, string> | null; oduIds: number[] | null;
 }
 export interface LibraryEntry extends LibraryBrief { body: string; published: boolean; order: number; updatedAt: string; privateBody?: string | null }
+
+/** R22 : relie un nom cité dans un Odu à la fiche de la divinité (logique partagée, testée dans @ona/core). */
+export function divinityLinker(entries: LibraryBrief[] | null | undefined): (name: string) => string | undefined {
+  return makeDivinityLinker((entries ?? []).map((e) => ({ slug: e.slug, title: e.title, subtitle: e.subtitle, otherNames: e.meta?.otherNames })));
+}

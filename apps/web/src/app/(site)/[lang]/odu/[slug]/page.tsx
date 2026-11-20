@@ -15,7 +15,7 @@ import { pageMeta } from '@/i18n/server';
 import { apiGet } from '@/lib/api';
 import { pick } from '@/lib/site-data-shared';
 import { getSiteData } from '@/lib/site-data.server';
-import type { LibraryBrief, OduDomainReading, OduTeaching } from '@/lib/types';
+import { divinityLinker, type LibraryBrief, type OduDomainReading, type OduTeaching } from '@/lib/types';
 import { EntryCard } from '@/components/site/library-pages';
 
 export const revalidate = 600;
@@ -44,10 +44,12 @@ export default async function OduDetail({ params }: P) {
   const o = oduBySlug(slug);
   if (!o) notFound();
   // Le texte du prêtre (admin) est en français : il ne remplace le texte du moteur qu'en français.
-  const [content, site, domains, linked] = await Promise.all([
+  const [content, site, domains, linked, divinities] = await Promise.all([
     apiGet<OduTeaching>(`/odu/${o.slug}`, 600), getSiteData(lang), apiGet<OduDomainReading[]>(`/odu/${o.slug}/domaines`, 600),
-    apiGet<LibraryBrief[]>(`/odu/${o.slug}/library`, 300),
+    apiGet<LibraryBrief[]>(`/odu/${o.slug}/library`, 300), apiGet<LibraryBrief[]>('/library/divinite', 300),
   ]);
+  const findDivinity = divinityLinker(divinities);
+  const divinityHref = (name: string) => { const s = findDivinity(name); return s ? lp(lang, `/divinites/${s}`) : undefined; };
   // Texte de départ si l'API est injoignable : la fiche n'est jamais vide (R13).
   const lore = content?.lore ?? defaultLore(o);
   const teaching = content?.teaching || lore.teaching;
@@ -88,7 +90,7 @@ export default async function OduDetail({ params }: P) {
 
             <Reveal delay={0.05} className="mt-14 border-t border-border pt-10">
               <h2 className="text-card-title text-text">{lx.oriki}</h2>
-              <div className="mt-6"><LoreIntro lore={lore} l={lx} /></div>
+              <div className="mt-6"><LoreIntro lore={lore} l={lx} href={divinityHref} /></div>
             </Reveal>
 
             <Reveal delay={0.05} className="mt-12 border-t border-border pt-10">
@@ -154,7 +156,7 @@ export default async function OduDetail({ params }: P) {
 
             <Reveal delay={0.05} className="mt-12 border-t border-border pt-10">
               <h2 className="text-card-title text-text">{lx.birthTitle}</h2>
-              <div className="mt-6"><BirthReading lore={lore} l={lx} /></div>
+              <div className="mt-6"><BirthReading lore={lore} l={lx} href={divinityHref} /></div>
               <p className="mt-6 text-[12px] text-text-faint">{lx.traditionNote}</p>
               <FrenchContentNote lang={lang} />
             </Reveal>

@@ -10,7 +10,9 @@
     "db:seed": "node --env-file=.env -r ts-node/register/transpile-only prisma/seed.ts",
     "test": "node --test test/",
     "e2e": "node --env-file=.env scripts/e2e-parcours.js",
-    "db:seed-odu": "node --env-file=.env -r ts-node/register/transpile-only prisma/seed-odu-domains.ts"
+    "db:seed-odu": "node --env-file=.env -r ts-node/register/transpile-only prisma/seed-odu-domains.ts",
+    "db:seed-odu-omo": "node --env-file=.env -r ts-node/register/transpile-only prisma/seed-odu-omo.ts",
+    "db:seed-library": "node --env-file=.env -r ts-node/register/transpile-only prisma/seed-library.ts"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.0",
