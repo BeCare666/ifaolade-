@@ -25,6 +25,12 @@ export const SETTINGS: Record<string, Def> = {
     label: 'Taux EUR → FCFA', default: Number(process.env.EUR_TO_XOF || 655.957),
     validate: (v) => typeof v === 'number' && v > 100 && v < 2000, hint: 'Parité fixe : 655,957.',
   },
+  // Créneaux : délai minimum entre maintenant et le début d'un créneau réservable (demande du 2026-11-20).
+  'booking.minLeadHours': {
+    label: 'Délai minimum avant un créneau (heures)', default: Number(process.env.BOOKING_MIN_LEAD_HOURS || 24), public: true,
+    validate: (v) => typeof v === 'number' && Number.isInteger(v) && v >= 0 && v <= 168,
+    hint: 'Un créneau ne peut plus être réservé s’il commence dans moins de ce délai. Entier de 0 à 168, ex. 24.',
+  },
   'booking.depositRate': {
     label: 'Acompte des voyages (part du total)', default: Number(process.env.BOOKING_DEPOSIT_RATE || 0.3),
     validate: (v) => typeof v === 'number' && v > 0 && v <= 1, hint: 'Entre 0 et 1, ex. 0,3 pour 30 %.',

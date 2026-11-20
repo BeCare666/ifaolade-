@@ -1,4 +1,5 @@
 import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { SETTINGS, SettingsService } from '../common/settings.service';
 import { oduById } from '@ona/core';
 import { ConsultationStatus, Prisma } from '@prisma/client';
 import { isStaff, JwtUser } from '../common/auth';
@@ -29,7 +30,14 @@ export class ConsultationsService {
     private prisma: PrismaService,
     private mail: MailService,
     private notify: NotificationsService,
+    private settings?: SettingsService,
   ) {}
+
+  /** Début le plus proche réservable : maintenant + délai minimum (Admin › Paramètres). */
+  async earliestStart(): Promise<Date> {
+    const h = Number(this.settings ? await this.settings.get('booking.minLeadHours') : SETTINGS['booking.minLeadHours'].default);
+    return new Date(Date.now() + Math.max(0, h) * 3_600_000);
+  }
 
   // ---------- Client ----------
 
@@ -50,10 +58,14 @@ export class ConsultationsService {
     if (dto.slotId) {
       // Réservation atomique : seul un créneau libre et futur peut être pris.
       const taken = await this.prisma.slot.updateMany({
-        where: { id: dto.slotId, isBooked: false, startsAt: { gt: new Date() } },
+        where: { id: dto.slotId, isBooked: false, startsAt: { gt: await this.earliestStart() } },
         data: { isBooked: true },
       });
-      if (taken.count !== 1) throw new BadRequestException("Ce créneau n'est plus disponible");
+      if (taken.count !== 1) {
+        const s = await this.prisma.slot.findUnique({ where: { id: dto.slotId } });
+        if (s && !s.isBooked && s.startsAt > new Date()) throw new BadRequestException('Ce créneau est trop proche. Choisis un créneau plus tard, pour que le prêtre puisse préparer ta consultation.');
+        throw new BadRequestException("Ce créneau n'est plus disponible");
+      }
     }
 
     const status: ConsultationStatus = offer.isFree || offer.priceCents === 0 ? 'CONFIRMED' : 'AWAITING_PAYMENT';

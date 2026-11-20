@@ -26,11 +26,13 @@ export class ConsultationsController {
   }
 
   @Get('slots')
-  slots(@Query('from') from?: string, @Query('to') to?: string) {
-    const start = from ? new Date(from) : new Date();
+  async slots(@Query('from') from?: string, @Query('to') to?: string) {
+    // Délai minimum : un créneau trop proche n'est jamais proposé (Admin › Paramètres).
+    const earliest = await this.svc.earliestStart();
+    const start = from ? new Date(from) : earliest;
     const end = to ? new Date(to) : new Date(Date.now() + 30 * 86400_000);
     return this.prisma.slot.findMany({
-      where: { isBooked: false, startsAt: { gte: start < new Date() ? new Date() : start, lte: end } },
+      where: { isBooked: false, startsAt: { gte: start < earliest ? earliest : start, lte: end } },
       orderBy: { startsAt: 'asc' },
       select: { id: true, startsAt: true, endsAt: true },
     });

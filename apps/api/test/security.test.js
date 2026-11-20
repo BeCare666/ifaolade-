@@ -111,10 +111,13 @@ test('un créneau déjà pris ne peut pas être réservé deux fois', async () =
   const prisma = {
     consultationOffer: { findUnique: async () => ({ id: 'O', code: 'VIDEO', isFree: false, active: true, requiresSlot: true, priceCents: 4500, currency: 'EUR' }) },
     user: { findUniqueOrThrow: async () => ({ id: 'A', emailVerified: true }) },
-    slot: { updateMany: async () => ({ count: 0 }) },
+    slot: { updateMany: async () => ({ count: 0 }), findUnique: async () => ({ id: 'S1', isBooked: true, startsAt: new Date(Date.now() + 3 * 86400_000) }) },
   };
   const svc = new ConsultationsService(prisma, mail, notify);
   await assert.rejects(svc.create('A', { offerCode: 'VIDEO', slotId: 'S1', question: 'Ma question', consent: true }), (e) => /plus disponible/.test(e.message));
+  // Créneau libre mais trop proche (dans 1 h) : refus explicite.
+  prisma.slot.findUnique = async () => ({ id: 'S1', isBooked: false, startsAt: new Date(Date.now() + 3600_000) });
+  await assert.rejects(svc.create('A', { offerCode: 'VIDEO', slotId: 'S1', question: 'Ma question', consent: true }), (e) => /trop proche/.test(e.message));
 });
 
 // ---------- Compte rendu et suivis (règle 4.5) ----------
@@ -330,4 +333,14 @@ test('bibliothèque : le contenu privé d’un rituel ne sort jamais par les rou
 test('bibliothèque : champs complémentaires et Odu liés nettoyés', () => {
   assert.deepStrictEqual(cleanMeta('divinite', { colors: ' Blanc ', hack: 'x', day: 3 }), { colors: 'Blanc' });
   assert.deepStrictEqual(cleanOduIds([0, '17', 300, -1, 1.5, 17]), [0, 17]);
+});
+
+// ---------- Créneaux : délai minimum avant réservation (2026-11-20) ----------
+test('créneaux : un créneau trop proche n’est ni proposé ni réservable', async () => {
+  const svc = new ConsultationsService({}, {}, {}, { get: async () => 24 });
+  const e = await svc.earliestStart();
+  const diff = e.getTime() - Date.now();
+  assert.ok(diff > 23.9 * 3600_000 && diff <= 24 * 3600_000, 'maintenant + 24 h');
+  const noLead = await new ConsultationsService({}, {}, {}, { get: async () => 0 }).earliestStart();
+  assert.ok(Math.abs(noLead.getTime() - Date.now()) < 1000, 'délai 0 : maintenant');
 });

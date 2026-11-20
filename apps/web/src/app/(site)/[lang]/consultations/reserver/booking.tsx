@@ -1,6 +1,7 @@
 'use client';
 
 import { ArrowLeft, ArrowRight, CalendarPlus, Check, ChevronLeft, ChevronRight, CreditCard, PenLine, Smartphone, Video } from 'lucide-react';
+import { useSiteData } from '@/lib/site-data';
 import { AnimatePresence, motion } from 'motion/react';
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
@@ -74,6 +75,8 @@ export function Booking({ initialOffer, readingId: initialReading, initialQuesti
   const { token, user, ready, refresh } = useAuth();
   const offers = useApi<Offer[]>('/offers');
   const [to] = useState(() => new Date(Date.now() + 60 * 86_400_000).toISOString());
+  // Délai minimum avant un créneau (Admin › Paramètres) : l'API ne propose rien de plus proche.
+  const leadHours = Number(useSiteData().settings['booking.minLeadHours'] ?? 24);
   const slots = useApi<Slot[]>(`/slots?to=${encodeURIComponent(to)}`);
 
   const [step, setStep] = useState<Step>(0);
@@ -238,7 +241,7 @@ export function Booking({ initialOffer, readingId: initialReading, initialQuesti
           {step === 1 && (
             <section>
               <h2 className="text-card-title text-text">Choisis ton heure</h2>
-              <p className="mt-2 text-[14px] text-text-muted">Heures du Bénin (UTC+1). Ton heure locale est indiquée sous chaque horaire.</p>
+              <p className="mt-2 text-[14px] text-text-muted">Heures du Bénin (UTC+1). Ton heure locale est indiquée sous chaque horaire.{leadHours > 0 && <> Les créneaux se réservent au moins {leadHours} h à l'avance, pour que le prêtre prépare ta consultation.</>}</p>
               <div className="mt-6">
                 {slots.loading ? <Skeleton className="h-64 w-full" /> : slots.error ? <ErrorState description={slots.error} onRetry={slots.reload} /> : !slots.data?.length || !week ? (
                   <EmptyState title="Aucun créneau disponible pour le moment" description="De nouveaux créneaux sont ouverts chaque semaine. Écris-nous si c'est urgent." action={<ButtonLink href="/contact" variant="secondary" size="sm">Nous écrire</ButtonLink>} />
