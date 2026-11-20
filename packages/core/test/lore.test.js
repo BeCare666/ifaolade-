@@ -29,3 +29,21 @@ test('une modification du prêtre remplace seulement les champs remplis', () => 
   assert.deepStrictEqual(m.birth.colors, ['Blanc', 'Argent']);
   assert.strictEqual(m.birth.nature, base.birth.nature);
 });
+
+test('enseignements approfondis : les 256 Odu ont un texte complet et propre', () => {
+  const { MEJI_TEACHING } = require('../dist');
+  for (const m of MEJI) {
+    const t = MEJI_TEACHING[m.ascii];
+    assert.ok(t && t.intro.length === 2 && t.story.text && t.teaches.length >= 4 && t.asks.length >= 4 && t.warns.length >= 3 && t.word && t.question, m.ascii);
+  }
+  const seen = new Set();
+  for (const o of allOdu()) {
+    const md = defaultLore(o).teaching;
+    assert.ok(md.length > 1200, `${o.slug} trop court`);
+    assert.ok(md.includes('## '), o.slug);
+    assert.ok(/Un récit d'Ifá|Une parabole/.test(md), `${o.slug} : récit non qualifié`);
+    if (!o.isMeji) assert.ok(md.includes(o.right.name) && md.includes(o.left.name), o.slug);
+    assert.ok(!seen.has(md), `${o.slug} : enseignement identique à un autre`);
+    seen.add(md);
+  }
+});

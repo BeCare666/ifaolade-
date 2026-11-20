@@ -8,6 +8,7 @@
  * - Aucun vers yoruba n'est inventé : l'éloge est écrit en français.
  */
 import type { Odu } from './engine';
+import { mejiTeachingMarkdown, omoTeachingMarkdown } from './teachings';
 
 export interface BirthLore {
   /** Ce que la personne est. */
@@ -410,7 +411,8 @@ const firstSentence = (s: string) => (s.match(/^[^.]*\./)?.[0] ?? s).trim();
 export function defaultLore(o: Odu): OduLore {
   const R = MEJI_LORE[o.right.ascii];
   const L = MEJI_LORE[o.left.ascii];
-  if (o.isMeji) return { ...R, birth: { ...R.birth, noEat: [...R.birth.noEat, EEWO_NOTE] } };
+  // Enseignements approfondis (teachings.ts) : complets pour les Méjì, propres à chaque Ọmọ Odù.
+  if (o.isMeji) return { ...R, teaching: mejiTeachingMarkdown(o.right.ascii, o.name), birth: { ...R.birth, noEat: [...R.birth.noEat, EEWO_NOTE] } };
   const rn = o.right.name;
   const ln = o.left.name;
   return {
@@ -418,7 +420,7 @@ export function defaultLore(o: Odu): OduLore {
     orisha: uniq([...R.orisha, ...L.orisha]).slice(0, 5),
     vodun: uniq([...R.vodun, ...L.vodun]).slice(0, 4),
     lessons: uniq([...R.lessons.slice(0, 3), ...L.lessons.slice(0, 2)]),
-    teaching: `## ${rn} gouverne\n\n${o.right.essence}\n\n${R.lessons.slice(0, 2).map((l) => `- ${l}`).join('\n')}\n\n## ${ln} nuance\n\n${o.left.essence}\n\n${L.lessons.slice(0, 2).map((l) => `- ${l}`).join('\n')}\n\n> ${o.name} se lit d'abord par ${rn}, la jambe droite, qui donne la direction ; ${ln}, la jambe gauche, précise et colore ce qu'il dit.`,
+    teaching: omoTeachingMarkdown(o),
     birth: {
       nature: `${R.birth.nature} Par la jambe gauche, ${ln} nuance ce caractère : ${lowerFirst(firstSentence(L.birth.nature))}`,
       path: `${R.birth.path} ${ln} y ajoute sa couleur : ${lowerFirst(firstSentence(L.birth.path))}`,
