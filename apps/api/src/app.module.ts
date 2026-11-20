@@ -13,6 +13,7 @@ import { ConsultationsModule } from './consultations/consultations.module';
 import { ProgramsModule } from './programs/programs.module';
 import { EventsModule } from './events/events.module';
 import { ArticlesModule } from './articles/articles.module';
+import { LibraryModule } from './library/library.module';
 import { PaymentsModule } from './payments/payments.module';
 import { MediaModule } from './media/media.module';
 import { AdminModule } from './admin/admin.module';
@@ -36,6 +37,7 @@ import { HealthController } from './common/health.controller';
     ProgramsModule,
     EventsModule,
     ArticlesModule,
+    LibraryModule,
     PaymentsModule,
     MediaModule,
     AdminModule,

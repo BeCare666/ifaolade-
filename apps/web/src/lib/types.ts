@@ -153,3 +153,10 @@ export interface Dossier {
   ewos: Ewo[];
   readings: { id: string; oduId: number; sunSign: string; createdAt: string }[];
 }
+
+// ---------- R21 : bibliothèque spirituelle ----------
+export interface LibraryBrief {
+  id: string; kind: 'rituel' | 'wasu' | 'divinite'; slug: string; title: string; subtitle: string | null; excerpt: string;
+  category: string; coverUrl: string | null; meta: Record<string, string> | null; oduIds: number[] | null;
+}
+export interface LibraryEntry extends LibraryBrief { body: string; published: boolean; order: number; updatedAt: string; privateBody?: string | null }

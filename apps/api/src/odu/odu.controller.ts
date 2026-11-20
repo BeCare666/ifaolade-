@@ -35,7 +35,8 @@ export function cleanLore(raw: unknown): LoreOverride {
 }
 
 /** Domaines de vie d'une consultation (plan, étape 5.9). */
-export const DOMAINS = ['amour', 'argent', 'sante', 'famille', 'installation', 'spirituel', 'enfants'] as const;
+/** R20 : adogo = Adɔ̀gò Fá (consultation pendant la grossesse), afojete = Afɔ̀jɛ́tɛ́ (consultation à la naissance). */
+export const DOMAINS = ['amour', 'argent', 'sante', 'famille', 'installation', 'spirituel', 'enfants', 'adogo', 'afojete'] as const;
 const isDomain = (d: string) => (DOMAINS as readonly string[]).includes(d);
 
 class DomainTextDto {

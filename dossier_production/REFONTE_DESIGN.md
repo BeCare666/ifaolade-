@@ -310,6 +310,45 @@ Dernière étape de Connais-toi, **facultative** (« Passer cette étape »).
 
 **Terminé quand** : l'étape fonctionne au doigt sur téléphone et à la souris sur ordinateur, les mesures apparaissent dans le portrait, et un portrait sans empreinte reste identique à avant.
 
+## 11 septies. Corrections et bibliothèque spirituelle (étapes R17 à R22, demandées le 2026-11-20)
+
+Décisions prises avec toi le 2026-11-20 : Afɔ̀jɛ́tɛ́ = consultation faite à la naissance ; rituels de combat = **défense et renvoi seulement** (jamais pour nuire à une personne nommée) ; rituels en public = **sens et déroulé général** (matériel et quantités réservés à l'admin et au dossier client) ; ordre = **structure d'abord, puis contenus par lots**.
+
+### R17. Empreinte : ne rien dévoiler de la mesure
+1. Le portrait ne dit jamais ce qui a été observé : ni « tu as hésité », ni « ton doigt a bougé », ni « tu as levé le doigt », ni chiffres. Il décrit seulement l'état du moment.
+2. Pendant l'appui, si le doigt est levé, le message est neutre : « Pose ton doigt et garde-le jusqu'au bout. »
+3. Mention : « Cette lecture reflète ton état du moment, pas tes pensées. »
+
+### R18. Fenêtre d'accueil à 4 boutons, toutes les 5 minutes
+1. Quatre boutons sur l'arc : **Connais-toi**, **Faire une consultation** (au sommet), **J'ai déjà mon Odu**, **Les Odu**.
+2. Elle réapparaît **toutes les 5 minutes** de navigation sur la vitrine (onglet visible), jamais pendant Connais-toi, J'ai déjà mon Odu, la connexion, l'inscription, le paiement.
+
+### R19. Bouton « Odu » de la barre basse mobile
+Au toucher, un panneau monte du bas avec deux grandes cartes illustrées : **Voir les Odu** (bibliothèque) et **Vérifier mon Odu** (carte des 8 cercles). Animation douce, fermeture par glissement, croix ou clic à côté.
+
+### R20. Deux choix de plus dans « Sur quoi portait ta consultation ? »
+- **Mon Odu reçu dans le ventre de ma mère** · *Adɔ̀gò Fá : consultation faite pendant la grossesse*
+- **Mon Odu de naissance** · *Afɔ̀jɛ́tɛ́ : consultation faite à la naissance*
+Pour ces deux choix, l'explication porte sur toute la vie : ce que la personne est, son chemin, ce qu'elle doit faire et éviter, ses interdits alimentaires, les divinités à honorer, ses couleurs (bloc « signe de naissance » de R13), précédé du texte du prêtre s'il en a publié un. Les deux choix ont leur onglet dans l'éditeur admin « Odu × domaine ».
+
+### R21. Bibliothèque spirituelle : rituels, wáàsù, divinités (modifiables et ajoutables)
+Un seul modèle `LibraryEntry { kind, slug, title, subtitle, excerpt, body, privateBody, category, meta, oduIds, coverUrl, published, order }` :
+
+| Type | Catégories | Public | Admin seulement |
+|---|---|---|---|
+| **Rituel** (`/rituels`) | Déblocage, Protection, Défense et renvoi, Purification, Ouverture des chemins, Prospérité | but, sens, quand le faire, Odu liés, déroulé général | matériel, quantités, étapes détaillées (`privateBody`) |
+| **Wáàsù** (`/wasu`) | Le sens de la vie, Le caractère (ìwà), La destinée (orí), La famille, L'épreuve, La sagesse | texte complet | — |
+| **Divinité** (`/divinites`) | Òrìṣà, Vodun, Les deux | histoire, rôle, autres noms, couleurs, jour, offrandes, interdits, symboles, Odu liés | — |
+
+Admin › **Bibliothèque** : Rituels, Wáàsù, Divinités (liste, nouveau, modifier, brouillon / publié, supprimer). Chaque fiche d'Odu affiche les rituels, wáàsù et divinités qui lui sont liés. Menu de la vitrine : groupe « Les Odu » enrichi de ces trois entrées.
+
+### R22. Contenus par lots (recherches)
+1. **Lot 1** : les 16 Méjì en profondeur (explication avancée, textes des 9 choix).
+2. **Lots 2 à 16** : les 240 Ọmọ Odù par famille de jambe droite (15 par lot), chacun avec **ses propres** textes dans les 7 domaines + Adɔ̀gò Fá + Afɔ̀jɛ́tɛ́ ; fin du message « pas encore de texte propre ».
+3. **Lot 17** : divinités (Òrìṣà et Vodun principaux) avec leur histoire.
+4. **Lot 18** : rituels (au moins un par catégorie et par Méjì) et wáàsù (au moins un par thème).
+Chaque lot : textes importés et publiés, modifiables dans l'admin, fichier de relecture pour le prêtre dans `dossier_production/`, build, commit.
+
 ## 12. Contrôles de fin (étape R11)
 
 1. `npm test` (core, api) et `next build` sans erreur.
@@ -345,6 +384,12 @@ R0 tokens et polices → R1 logo → R2 en-tête → R3 drawer → R4 pied de pa
 | R14 fenêtre d'accueil (demi-cercle translucide, 3 boutons : Connais-toi, Consultation, Les Odu), une seule fois | ✅ |
 | R15 empreinte du moment (dernière étape facultative de Connais-toi : hésitation, stabilité, levers ; section visible sans compte dans le portrait, textes modifiables) | ✅ core 30/30, API 28/28 |
 | R16 parcours sans distraction : Connais-toi et J'ai déjà mon Odu en plein écran (ni en-tête, ni pied de page, ni barre basse), une étape à la fois, démonstration au premier plan, recherche en tiroir | ✅ ⏳ contrôle sur téléphone |
+| R17 empreinte : rien de la mesure n'est dévoilé | ✅ |
+| R18 fenêtre d'accueil 4 boutons, toutes les 5 minutes | ✅ |
+| R19 bouton Odu de la barre basse (icône Jɔ̀gbɛ̀) : Voir les Odu / Vérifier mon Odu ; « Connais-toi » avec icône empreinte | ✅ |
+| R20 Adɔ̀gò Fá et Afɔ̀jɛ́tɛ́ dans les domaines | ✅ |
+| R21 bibliothèque : rituels, wáàsù, divinités (admin + pages) | ✅ table poussée sur TiDB, API 30/30 |
+| R22 contenus par lots (256 Odu × 9, divinités, rituels, wáàsù) | ⏳ sources libres insuffisantes (Wikipedia, AUC : 16 Méjì seulement) ; en attente de ta décision : savoir du prêtre, livre de Maupoil, ou brouillons à valider |
 | R8 images de départ : 16 emplacements remplis (11 photos Unsplash vérifiées : cauris, indigo, jarres, forêt, village lacustre, marché, Cotonou, lagune), remplaçables dans Admin › Apparence › Images, « Revenir à l’image de départ » | ✅ ⏳ à remplacer par tes vraies photos (prêtre, ọpọ́n, temple) |
 | Corrections du 2026-11-19 : email à confirmer avant toute connexion (page « email envoyé », renvoi du lien, lien recliquable sans erreur), console du prêtre `/console` (redirige vers `/admin`, refuse les clients), menu de langue qui s’ouvre sur ordinateur, barre basse mobile sur toute la vitrine | ✅ API 27/27 + build |
 | R11 contrôles : typage ✅ ; compilation complète interrompue (mémoire du PC insuffisante) ; contrôle visuel à faire | ⏳ |

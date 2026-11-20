@@ -45,15 +45,15 @@ export type ImprintTextKey =
 
 /** Textes français (source), modifiables dans Admin › Textes du portrait (groupe « Empreinte du moment »). */
 export const IMPRINT_TEXT: Record<ImprintTextKey, string> = {
-  'imprint.stable': "Ton doigt est resté presque immobile. En ce moment, tu tiens les choses en main : tu es dans le contrôle et la décision, même si cela te demande un effort.",
-  'imprint.mobile': "Ton doigt a un peu bougé, sans se perdre. Tu avances en ce moment avec une part de doute : tu tiens, mais quelque chose te travaille en arrière-plan.",
-  'imprint.agite': "Ton doigt a beaucoup bougé pendant l'appui. Quelque chose t'agite en ce moment : ton corps porte une tension que tu n'as peut-être pas encore nommée.",
-  'imprint.direct': "Tu as posé ton doigt sans attendre : tu sais ce que tu cherches et tu es prêt·e à l'entendre.",
-  'imprint.reflechi': "Tu as pris quelques secondes avant de poser ton doigt : tu pèses les choses avant d'agir, tu ne te lances pas sans réfléchir.",
-  'imprint.hesitant': "Tu as longtemps attendu avant de poser ton doigt : une part de toi retient une décision, ou hésite à regarder la situation en face.",
-  'imprint.interrupted': "Tu as levé le doigt avant la fin : l'impatience ou l'inquiétude te pousse à vouloir des réponses tout de suite.",
-  'imprint.tension': "Ta main agitée rejoint ce que disent tes réponses : la tension que tu portes est réelle, et elle mérite d'être déposée plutôt que gardée pour toi.",
-  'imprint.note': "Mesure réelle de ton geste à cet instant : elle reflète ton état du moment, pas tes pensées.",
+  "imprint.stable": "En ce moment, tu tiens les choses en main : tu es dans le contrôle et la décision, même si cela te demande un effort que les autres ne voient pas.",
+  "imprint.mobile": "En ce moment, tu avances avec une part de doute : tu tiens debout, mais quelque chose te travaille en arrière-plan.",
+  "imprint.agite": "En ce moment, quelque chose t'agite : tu portes une tension que tu n'as peut-être pas encore nommée.",
+  "imprint.direct": "Tu sais ce que tu cherches, et une part de toi est prête à l'entendre.",
+  "imprint.reflechi": "Tu pèses les choses avant d'agir : tu ne te lances pas sans avoir réfléchi.",
+  "imprint.hesitant": "Une part de toi retient une décision, ou n'ose pas encore regarder la situation en face.",
+  "imprint.interrupted": "Tu voudrais des réponses tout de suite : l'impatience ou l'inquiétude te presse.",
+  "imprint.tension": "Cet état rejoint ce que disent tes réponses : la tension que tu portes est réelle, et elle mérite d'être déposée plutôt que gardée pour toi.",
+  "imprint.note": "Cette lecture reflète ton état du moment, pas tes pensées.",
 };
 
 export const IMPRINT_LABELS = {

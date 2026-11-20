@@ -16,6 +16,7 @@ interface Stats { current: Period; previous: Period; byDomain: Record<string, nu
 interface Activity { at: string; kind: string; text: string; href: string | null }
 
 const DOMAINS: Record<string, string> = {
+  adogo: 'Adɔ̀gò Fá', afojete: 'Afɔ̀jɛ́tɛ́',
   amour: 'Amour / couple', argent: 'Argent / travail', sante: 'Santé', famille: 'Famille',
   installation: 'Papiers / installation', spirituel: 'Spiritualité / protection', enfants: 'Enfants / fertilité', 'non précisé': 'Non précisé',
 };

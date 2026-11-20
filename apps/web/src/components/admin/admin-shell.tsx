@@ -1,8 +1,8 @@
 'use client';
 
 import {
-  BookOpen, CalendarClock, CalendarRange, ChevronDown, ExternalLink, Film, FolderKanban, Image as ImageIcon, Inbox, LayoutDashboard, LogOut, Menu,
-  History, MessageCircleReply, MessageSquareText, PlaneTakeoff, Search, Settings, Share2, Sparkles, Ticket, Type, UserRound, Users, Wallet, X,
+  BookHeart, BookOpen, CalendarClock, CalendarRange, ChevronDown, ExternalLink, Film, Flame, FolderKanban, Image as ImageIcon, Inbox, LayoutDashboard, LogOut, Menu,
+  History, MessageCircleReply, MessageSquareText, PlaneTakeoff, Search, Settings, Share2, Sparkles, Sun, Ticket, Type, UserRound, Users, Wallet, X,
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
@@ -40,6 +40,14 @@ export const ADMIN_GROUPS: { title?: string; links: NavLink[] }[] = [
       { href: '/admin/odu', label: 'Bibliothèque Odu', icon: BookOpen },
       { href: '/admin/textes-portrait', label: 'Textes du portrait', icon: Sparkles },
       { href: '/admin/enseignements', label: 'Enseignements', icon: FolderKanban },
+    ],
+  },
+  {
+    title: 'Bibliothèque',
+    links: [
+      { href: '/admin/bibliotheque/rituel', label: 'Rituels', icon: Flame },
+      { href: '/admin/bibliotheque/wasu', label: 'Wáàsù', icon: BookHeart },
+      { href: '/admin/bibliotheque/divinite', label: 'Divinités', icon: Sun },
     ],
   },
   {

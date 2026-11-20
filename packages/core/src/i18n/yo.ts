@@ -217,16 +217,17 @@ export const yo: CorePack = {
   positions: { fire: 'Iná', air: 'Afẹ́fẹ́', water: 'Omi', earth: 'Ilẹ̀' },
   imprint: {
     texts: {
-      'imprint.stable': 'Ìka rẹ dúró jẹ́ẹ́ fẹ́rẹ̀ẹ́. Ní àkókò yìí, o di nǹkan mú dáadáa: ìwọ ló ń darí, ìwọ ló ń pinnu, bí ó tilẹ̀ ń gba agbára lọ́wọ́ rẹ.',
-      'imprint.mobile': 'Ìka rẹ mì díẹ̀, ṣùgbọ́n kò sọnù. O ń tẹ̀síwájú pẹ̀lú iyèméjì díẹ̀: o dúró, ṣùgbọ́n nǹkan kan ń ṣiṣẹ́ nínú rẹ lẹ́yìn.',
-      'imprint.agite': 'Ìka rẹ mì púpọ̀ nígbà tí o fi sí i. Nǹkan kan ń dà ọ́ láàmú ní àkókò yìí: ara rẹ gbé ìdààmú kan tí o kò tíì dárúkọ.',
-      'imprint.direct': 'O fi ìka rẹ sí i lẹ́sẹ̀kẹsẹ̀: o mọ ohun tí ò ń wá, o sì ṣetán láti gbọ́ ọ.',
-      'imprint.reflechi': 'O dúró fún ìṣẹ́jú-àáyá díẹ̀ kí o tó fi ìka rẹ sí i: o máa ń wọn nǹkan kí o tó ṣe é.',
-      'imprint.hesitant': 'O pẹ́ gan-an kí o tó fi ìka rẹ sí i: apá kan nínú rẹ ń dá ìpinnu kan dúró, tàbí ń lọ́ra láti kojú ọ̀ràn náà.',
-      'imprint.interrupted': 'O gbé ìka rẹ sókè kí ó tó parí: àìnísùúrù tàbí àníyàn ń tì ọ́ láti fẹ́ ìdáhùn lẹ́sẹ̀kẹsẹ̀.',
-      'imprint.tension': 'Ọwọ́ rẹ tí ń mì bá ohun tí àwọn ìdáhùn rẹ sọ mu: ìdààmú tí o gbé jẹ́ òótọ́, ó sì yẹ kí o gbé e kalẹ̀ dípò kí o dá a mú.',
-      'imprint.note': 'Ìwọ̀n gidi ti ìfọwọ́kàn rẹ ní àkókò yìí: ó ń fi ipò rẹ ìsinsìnyí hàn, kì í ṣe èrò rẹ.',
-    },
+      "imprint.stable": "Ní àkókò yìí, o di nǹkan mú dáadáa: ìwọ ló ń darí, ìwọ ló ń pinnu, bí ó tilẹ̀ ń gba agbára tí àwọn ẹlòmíràn kò rí.",
+      "imprint.mobile": "Ní àkókò yìí, o ń tẹ̀síwájú pẹ̀lú iyèméjì díẹ̀: o dúró, ṣùgbọ́n nǹkan kan ń ṣiṣẹ́ nínú rẹ lẹ́yìn.",
+      "imprint.agite": "Ní àkókò yìí, nǹkan kan ń dà ọ́ láàmú: o gbé ìdààmú kan tí o kò tíì dárúkọ.",
+      "imprint.direct": "O mọ ohun tí ò ń wá, apá kan nínú rẹ sì ṣetán láti gbọ́ ọ.",
+      "imprint.reflechi": "O máa ń wọn nǹkan kí o tó ṣe é: o kì í kán lù ú láìronú.",
+      "imprint.hesitant": "Apá kan nínú rẹ ń dá ìpinnu kan dúró, tàbí kò tíì láyà láti kojú ọ̀ràn náà.",
+      "imprint.interrupted": "O fẹ́ ìdáhùn lẹ́sẹ̀kẹsẹ̀: àìnísùúrù tàbí àníyàn ń tì ọ́.",
+      "imprint.tension": "Ipò yìí bá ohun tí àwọn ìdáhùn rẹ sọ mu: ìdààmú tí o gbé jẹ́ òótọ́, ó sì yẹ kí o gbé e kalẹ̀ dípò kí o dá a mú.",
+      "imprint.note": "Ìwé yìí ń fi ipò rẹ ìsinsìnyí hàn, kì í ṣe èrò rẹ.",
+    
+},
     labels: {
       title: 'Àmì ìka rẹ ti àkókò yìí', sub: 'Ọwọ́ {stab} · ọ̀nà {appr} · ìmì {px} px · {h} ìṣẹ́jú-àáyá kí o tó fọwọ́kàn',
       stable: 'tí ó dúró', mobile: 'tí ó mì díẹ̀', agite: 'tí ó mì púpọ̀', direct: 'tààrà', reflechi: 'pẹ̀lú ìrònú', hesitant: 'pẹ̀lú iyèméjì',

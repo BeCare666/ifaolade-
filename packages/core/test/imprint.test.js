@@ -30,7 +30,9 @@ test('portrait avec empreinte : section visible sans compte, placée après les 
     assert.strictEqual(s.preview, true);
     assert.ok(r.sections.slice(0, i).every((x) => x.preview), 'seules des sections d’aperçu avant');
     assert.ok(s.paragraphs.length >= 4, locale);
-    assert.ok(s.subtitle.includes('20'), locale);
+    // R17 : rien de la mesure n'est dévoilé.
+    assert.ok(!s.subtitle, locale);
+    assert.ok(!/doigt|geste|hésit|finger|gesture|ìka|[0-9]/i.test(s.paragraphs.join(' ')), locale);
   }
   const fr = buildReading({ ...base, imprint: { hesitationMs: 500, jitterPx: 1, lifts: 0 } });
   const s = fr.sections.find((x) => x.key === 'empreinte');

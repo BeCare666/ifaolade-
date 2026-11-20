@@ -331,7 +331,7 @@ export function buildReading(input: ReadingInput, texts: Record<string, string> 
     const tense = c.stability === 'agite' && (['controle', 'blocage', 'trahison', 'porteur'] as Dimension[]).some((x) => topDimensions.includes(x));
     sections.push({
       key: 'empreinte', title: IL.title,
-      subtitle: fill(IL.sub, { stab: IL[c.stability], appr: IL[c.approach], px: String(imprint.jitterPx), h: (imprint.hesitationMs / 1000).toFixed(1) }),
+      // R17 : rien de la mesure n’est dévoilé (ni geste, ni chiffres).
       preview: true,
       paragraphs: [
         IT(`imprint.${c.stability}`),

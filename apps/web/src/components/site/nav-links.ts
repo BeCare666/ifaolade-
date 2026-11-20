@@ -1,6 +1,6 @@
 import {
   BookOpen, CircleDot, Gift, Grid3x3, Hand, HandHeart, HelpCircle, Landmark, ListChecks, Mail, Map, MoonStar,
-  ShieldCheck, Sparkles, Ticket, Trees, Video, type LucideIcon,
+  ShieldCheck, Sparkles, Ticket, Trees, Video, BookHeart, Flame, Sun, type LucideIcon,
 } from 'lucide-react';
 import type { Dict } from '@/i18n';
 
@@ -62,7 +62,7 @@ export function menuGroups(d: Dict): MenuGroup[] {
     },
     {
       key: 'odu', title: d.menu.groups.odu, icon: Grid3x3, image: 'menu.odu',
-      items: [it('/odu', Grid3x3, 'odus'), it('/mon-odu', Hand, 'myOdu'), it('/odu?type=meji', CircleDot, 'meji')],
+      items: [it('/odu', Grid3x3, 'odus'), it('/mon-odu', Hand, 'myOdu'), it('/odu?type=meji', CircleDot, 'meji'), it('/rituels', Flame, 'rituals'), it('/wasu', BookHeart, 'wasu'), it('/divinites', Sun, 'divinities')],
       featured: f('odu', '/mon-odu'),
     },
     {

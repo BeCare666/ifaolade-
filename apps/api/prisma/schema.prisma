@@ -469,3 +469,27 @@ model SiteText {
 
   @@id([key, locale])
 }
+
+/// Bibliothèque spirituelle (REFONTE R21) : rituels, wáàsù et divinités, modifiables et ajoutables dans l'admin.
+model LibraryEntry {
+  id          String   @id @default(cuid())
+  kind        String // rituel | wasu | divinite
+  slug        String
+  title       String
+  subtitle    String?
+  excerpt     String   @db.Text
+  body        String   @db.LongText
+  /// Rituels : matériel, quantités, étapes détaillées. Jamais renvoyé par les routes publiques.
+  privateBody String?  @db.LongText
+  category    String
+  meta        Json?
+  oduIds      Json?
+  coverUrl    String?
+  published   Boolean  @default(false)
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([kind, slug])
+  @@index([kind, published])
+}

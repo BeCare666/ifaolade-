@@ -213,16 +213,17 @@ export const en: CorePack = {
   positions: { fire: 'Fire', air: 'Air', water: 'Water', earth: 'Earth' },
   imprint: {
     texts: {
-      'imprint.stable': 'Your finger stayed almost still. Right now you are holding things together: you are in control and making decisions, even if it costs you effort.',
-      'imprint.mobile': 'Your finger moved a little, without wandering off. You are moving forward with some doubt: you are holding on, but something is working on you in the background.',
-      'imprint.agite': 'Your finger moved a lot while you held it. Something is stirring you up right now: your body is carrying a tension you may not have named yet.',
-      'imprint.direct': 'You placed your finger straight away: you know what you are looking for and you are ready to hear it.',
-      'imprint.reflechi': 'You took a few seconds before placing your finger: you weigh things up before acting, you do not rush in.',
-      'imprint.hesitant': 'You waited a long time before placing your finger: part of you is holding back a decision, or hesitating to face the situation.',
-      'imprint.interrupted': 'You lifted your finger before the end: impatience or worry is pushing you to want answers right now.',
-      'imprint.tension': 'Your restless hand matches what your answers say: the tension you carry is real, and it deserves to be set down rather than kept to yourself.',
-      'imprint.note': 'A real measurement of your gesture at this moment: it reflects your state right now, not your thoughts.',
-    },
+      "imprint.stable": "Right now you are holding things together: you are in control and making decisions, even if it costs you an effort others do not see.",
+      "imprint.mobile": "Right now you are moving forward with some doubt: you are standing firm, but something is working on you in the background.",
+      "imprint.agite": "Right now something is stirring you up: you are carrying a tension you may not have named yet.",
+      "imprint.direct": "You know what you are looking for, and part of you is ready to hear it.",
+      "imprint.reflechi": "You weigh things up before acting: you do not rush in without thinking.",
+      "imprint.hesitant": "Part of you is holding back a decision, or does not yet dare to face the situation.",
+      "imprint.interrupted": "You would like answers right away: impatience or worry is pressing on you.",
+      "imprint.tension": "This state matches what your answers say: the tension you carry is real, and it deserves to be set down rather than kept to yourself.",
+      "imprint.note": "This reading reflects your state right now, not your thoughts.",
+    
+},
     labels: {
       title: 'Your imprint of the moment', sub: 'Hand {stab} · approach {appr} · average movement {px} px · {h} s before touching',
       stable: 'steady', mobile: 'moving', agite: 'restless', direct: 'direct', reflechi: 'thoughtful', hesitant: 'hesitant',

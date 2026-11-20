@@ -299,3 +299,35 @@ test('contenu traditionnel : seules les clés connues entrent en base, aux bons 
   assert.deepStrictEqual(cleanLore(null), {});
   assert.strictEqual(cleanLore({ lessons: Array.from({ length: 50 }, (_, i) => `l${i}`) }).lessons.length, 20);
 });
+
+// ---------- R21 : bibliothèque spirituelle ----------
+const { LibraryController, cleanMeta, cleanOduIds } = require('../dist/library/library.controller');
+const { NotFoundException } = require('@nestjs/common');
+
+function libFixture(rows) {
+  const prisma = { libraryEntry: {
+    findMany: async ({ where }) => rows.filter((r) => (!where.kind || r.kind === where.kind) && (where.published === undefined || r.published === where.published)),
+    findUnique: async ({ where }) => rows.find((r) => (where.id ? r.id === where.id : r.kind === where.kind_slug.kind && r.slug === where.kind_slug.slug)) ?? null,
+  } };
+  return new LibraryController(prisma);
+}
+const RIT = { id: 'r1', kind: 'rituel', slug: 'ouvrir', title: 'Ouvrir', excerpt: 'x', body: 'public', privateBody: 'SECRET : 7 noix de kola', category: 'chemins', meta: {}, oduIds: [0], published: true };
+
+test('bibliothèque : le contenu privé d’un rituel ne sort jamais par les routes publiques', async () => {
+  const svc = libFixture([RIT, { ...RIT, id: 'r2', slug: 'brouillon', published: false }]);
+  const one = await svc.one('rituel', 'ouvrir');
+  assert.strictEqual(one.privateBody, undefined);
+  const list = await svc.list('rituel');
+  assert.ok(list.every((e) => !('privateBody' in e) && !('body' in e)));
+  assert.strictEqual(list.length, 1, 'brouillon caché');
+  await assert.rejects(svc.one('rituel', 'brouillon'), is(NotFoundException));
+  const linked = await svc.forOdu('ogbe-oyeku');
+  assert.deepStrictEqual(linked.map((e) => e.slug), ['ouvrir'], 'lié par la jambe droite Ogbè');
+  assert.ok(linked.every((e) => !('privateBody' in e)));
+  await assert.rejects(svc.list('sortilege'), is(NotFoundException));
+});
+
+test('bibliothèque : champs complémentaires et Odu liés nettoyés', () => {
+  assert.deepStrictEqual(cleanMeta('divinite', { colors: ' Blanc ', hack: 'x', day: 3 }), { colors: 'Blanc' });
+  assert.deepStrictEqual(cleanOduIds([0, '17', 300, -1, 1.5, 17]), [0, 17]);
+});

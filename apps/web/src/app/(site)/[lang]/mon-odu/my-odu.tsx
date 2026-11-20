@@ -15,7 +15,9 @@ import { tpl } from '@/i18n';
 import { useI18n } from '@/i18n/client';
 import { apiGet } from '@/lib/api';
 import { cn } from '@/lib/cn';
-import { ODU_DOMAINS, type OduDomain, type OduLecture } from '@/lib/odu-domains';
+import { LIFE_DOMAINS, ODU_DOMAINS, type OduDomain, type OduLecture } from '@/lib/odu-domains';
+import { BirthReading } from '@/components/odu/odu-lore';
+import type { OduLore } from '@ona/core';
 import { pick } from '@/lib/site-data-shared';
 import { useSiteData } from '@/lib/site-data';
 
@@ -107,7 +109,8 @@ export function MyOdu() {
                 <button key={k} type="button" onClick={() => setDomain(k)} aria-pressed={domain === k}
                   className={cn('rounded-[var(--radius-md)] border px-4 py-3 text-left text-[15px] transition',
                     domain === k ? 'border-primary bg-primary text-primary-foreground' : 'border-border bg-surface text-text hover:border-text-faint')}>
-                  {d.domains[k]}
+                  <span className="block">{d.domains[k]}</span>
+                  {LIFE_DOMAINS.includes(k) && <span className={cn('mt-0.5 block text-[12px]', domain === k ? 'text-primary-foreground/75' : 'text-text-faint')}>{d.domainSubs[k as 'adogo' | 'afojete']}</span>}
                 </button>
               ))}
               <button type="button" onClick={() => setDomain(null)} aria-pressed={domain === null}
@@ -311,7 +314,7 @@ function Revealed({ odu }: { odu: Odu }) {
 
 /* ---------------- Explication guidée, une étape à la fois ---------------- */
 
-interface Detail { essence: string; teaching: string | null }
+interface Detail { essence: string; teaching: string | null; lore?: OduLore }
 
 function Explanation({ odu, domain, step }: { odu: Odu; domain: OduDomain | null; step: number }) {
   const { lang, d: dict, href } = useI18n();
@@ -338,6 +341,7 @@ function Explanation({ odu, domain, step }: { odu: Odu; domain: OduDomain | null
   // R13 : enseignement de départ si l'API ne répond pas.
   const teaching = detail?.teaching || defaultLore(odu).teaching;
   const domainLabel = domain ? d.domains[domain].toLowerCase() : '';
+  const stepTitle = (i: number) => (i === 3 && domain && LIFE_DOMAINS.includes(domain) ? d.domains[domain] : d.steps[i]);
 
   const body = (() => {
     switch (step) {
@@ -373,6 +377,17 @@ function Explanation({ odu, domain, step }: { odu: Odu; domain: OduDomain | null
           </>
         );
       case 3:
+        // R20 : Adɔ̀gò Fá et Afɔ̀jɛ́tɛ́ portent sur toute la vie : texte du prêtre s'il existe, puis la lecture complète.
+        if (domain && LIFE_DOMAINS.includes(domain)) {
+          return (
+            <>
+              <p className="text-body">{d.lifeIntro}</p>
+              {loaded && lecture?.own && <div className="mt-6"><Markdown source={lecture.own} /></div>}
+              <div className="mt-6"><BirthReading lore={detail?.lore ?? defaultLore(odu)} l={dict.odu.lore} /></div>
+              <FrenchContentNote lang={lang} />
+            </>
+          );
+        }
         if (!domain) return <><p className="text-body">{d.domainNone}</p><p className="text-body mt-4">{essence}</p></>;
         if (!loaded) return <p className="text-body text-text-faint">…</p>;
         if (lecture?.own) {
@@ -431,7 +446,7 @@ function Explanation({ odu, domain, step }: { odu: Odu; domain: OduDomain | null
       <AnimatePresence mode="wait">
         <motion.section key={step} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="mt-7">
           <p className="text-overline">{tpl(d.stepOf, { n: step + 1, total: d.steps.length })}</p>
-          <h2 className="mt-2 font-display text-[28px] leading-tight text-text sm:text-[34px]">{d.steps[step]}</h2>
+          <h2 className="mt-2 font-display text-[28px] leading-tight text-text sm:text-[34px]">{stepTitle(step)}</h2>
           <div className="mt-5">{body}</div>
           {step === 3 && (domain === 'sante' || domain === 'enfants') && (
             <p className="mt-6 rounded-[var(--radius-md)] border border-info/25 bg-info-soft px-4 py-3 text-[14px] text-text">{d.medical}</p>
