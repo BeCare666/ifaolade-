@@ -274,6 +274,42 @@ Règles :
 4. Trois langues ; « réduire les animations » respecté ; le focus va au premier bouton.
 
 
+## 11 quinquies. Parcours sans distraction (étape R16, demandée le 2026-11-20)
+
+Objectif : la personne qui consulte est « seule dans un champ, la tête dans le guidon ». Rien ne l'invite à défiler ni à partir.
+
+**Connais-toi** (`/connais-toi`) :
+1. Plein écran au-dessus du site : **ni en-tête, ni pied de page, ni barre basse, ni fenêtre d'accueil**. La page ne défile pas.
+2. En haut : le sceau Ifaôladé (petit), une **barre de progression fine**, une croix « Quitter » (retour à l'accueil, le brouillon est gardé).
+3. Au centre : **une seule question à la fois**, centrée verticalement. Rien à gauche, rien à droite.
+4. En bas : « Retour » et « Continuer », toujours à la même place.
+5. Le portrait (`/connais-toi/portrait/…`) reste une page normale du site.
+
+**J'ai déjà mon Odu** (`/mon-odu`) :
+1. Plein écran sur fond indigo nuit, même barre du haut (progression, croix).
+2. **Seulement la carte des 8 cercles au centre** ; sous la carte, le nom de l'Odu qui se forme et le bouton « Faire sortir mon Odu ». La recherche par nom s'ouvre dans un tiroir (icône loupe), elle n'est plus affichée sous la carte.
+3. **Démonstration** : au premier passage, elle passe au premier plan au-dessus de la carte, comme une vidéo : une main animée touche les cercles, une légende courte change à chaque geste, en boucle. Bouton « J'ai compris » ; un bouton « ? » la rejoue.
+4. Choix du domaine puis explication guidée : mêmes écrans plein cadre, une étape à la fois.
+
+**Terminé quand** : sur téléphone et ordinateur, aucun élément du site n'est visible pendant les deux parcours et aucune page ne défile (sauf un texte d'explication trop long, qui défile dans son cadre).
+
+## 11 sexies. Empreinte du moment (étape R15, demandée le 2026-11-20)
+
+Dernière étape de Connais-toi, **facultative** (« Passer cette étape »).
+
+1. Écran : un dessin d'empreinte au centre, la phrase « Pense à ce qui t'occupe en ce moment, puis pose ton doigt sur l'empreinte et garde-le 6 secondes. » Les sillons s'allument au fil des secondes.
+2. **Mesures réelles** (événements tactiles, tous téléphones, sans autorisation ni caméra) :
+   - **hésitation** : temps entre l'apparition de l'écran et le premier contact ;
+   - **stabilité** : déplacement moyen du doigt pendant l'appui (en pixels) ;
+   - **interruptions** : nombre de fois où le doigt est levé avant la fin.
+3. Classement : stabilité **stable** (< 3 px), **mobile** (< 10 px), **agitée** ; approche **directe** (< 1,5 s), **réfléchie** (< 6 s), **hésitante** ; **interrompue** si au moins un lever.
+4. Les trois mesures sont envoyées avec le portrait (`imprint`) et enregistrées dans `Reading.input`.
+5. Portrait : section **« Ton empreinte du moment »**, visible sans compte, placée après « Ce que les autres voient de toi » : les mesures affichées, une phrase pour la stabilité, une pour l'approche, une si interrompue, et **une nuance** si la main est agitée alors que les réponses montrent une tension (dimensions contrôle, blocage, trahison, porteur). Mention toujours présente : « Mesure réelle de ton geste à cet instant : elle reflète ton état du moment, pas tes pensées. »
+6. Les textes sont dans le catalogue du portrait (groupe « Empreinte du moment »), modifiables dans Admin › Textes du portrait. Anglais et yoruba fournis.
+7. L'analyse de 6 secondes ajoute la ligne « Lecture de ton empreinte du moment » quand l'étape a été faite.
+
+**Terminé quand** : l'étape fonctionne au doigt sur téléphone et à la souris sur ordinateur, les mesures apparaissent dans le portrait, et un portrait sans empreinte reste identique à avant.
+
 ## 12. Contrôles de fin (étape R11)
 
 1. `npm test` (core, api) et `next build` sans erreur.
@@ -307,6 +343,8 @@ R0 tokens et polices → R1 logo → R2 en-tête → R3 drawer → R4 pied de pa
 | R12 vue d'analyse du portrait (6 s, plein écran) | ✅ |
 | R13 Odu complets (éloge, Òrìṣà et Vodun, leçons, enseignement, 7 domaines, signe de naissance sur la fiche et dans le portrait), modifiables dans Admin › Odu › fiche | ✅ core 25/25, API 28/28, colonne `lore` poussée sur TiDB. ⏳ relecture du prêtre : `TEXTES_ODU_TRADITION.md` |
 | R14 fenêtre d'accueil (demi-cercle translucide, 3 boutons : Connais-toi, Consultation, Les Odu), une seule fois | ✅ |
+| R15 empreinte du moment (dernière étape facultative de Connais-toi : hésitation, stabilité, levers ; section visible sans compte dans le portrait, textes modifiables) | ✅ core 30/30, API 28/28 |
+| R16 parcours sans distraction : Connais-toi et J'ai déjà mon Odu en plein écran (ni en-tête, ni pied de page, ni barre basse), une étape à la fois, démonstration au premier plan, recherche en tiroir | ✅ ⏳ contrôle sur téléphone |
 | R8 images de départ : 16 emplacements remplis (11 photos Unsplash vérifiées : cauris, indigo, jarres, forêt, village lacustre, marché, Cotonou, lagune), remplaçables dans Admin › Apparence › Images, « Revenir à l’image de départ » | ✅ ⏳ à remplacer par tes vraies photos (prêtre, ọpọ́n, temple) |
 | Corrections du 2026-11-19 : email à confirmer avant toute connexion (page « email envoyé », renvoi du lien, lien recliquable sans erreur), console du prêtre `/console` (redirige vers `/admin`, refuse les clients), menu de langue qui s’ouvre sur ordinateur, barre basse mobile sur toute la vitrine | ✅ API 27/27 + build |
 | R11 contrôles : typage ✅ ; compilation complète interrompue (mémoire du PC insuffisante) ; contrôle visuel à faire | ⏳ |

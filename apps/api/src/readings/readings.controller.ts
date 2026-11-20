@@ -1,7 +1,7 @@
 import {
   BadRequestException, Body, Controller, ForbiddenException, Get, NotFoundException, Param, Post, Req,
 } from '@nestjs/common';
-import { buildReading, Reading as CoreReading, SIGNS } from '@ona/core';
+import { buildReading, cleanImprint, Reading as CoreReading, SIGNS } from '@ona/core';
 import { Prisma, Reading } from '@prisma/client';
 import {
   IsIn, IsLatitude, IsLongitude, IsObject, IsOptional, IsString, Matches, MaxLength,
@@ -25,6 +25,8 @@ class CreateReadingDto {
   @IsObject() answers: Record<string, string>;
   @IsIn([true]) consent: boolean; // consentement explicite, données sensibles (plan §15.2)
   @IsOptional() @IsIn(['fr', 'en', 'yo']) locale?: 'fr' | 'en' | 'yo'; // étape 6.4
+  /** Empreinte du moment (R15) : trois mesures du geste, bornées par cleanImprint. */
+  @IsOptional() @IsObject() imprint?: Record<string, unknown>;
 }
 
 @Controller('readings')
@@ -39,9 +41,10 @@ export class ReadingsController {
     const answers: Record<string, string> = {};
     for (const [k, v] of Object.entries(dto.answers || {})) answers[k] = String(v).slice(0, 400);
 
+    const imprint = cleanImprint(dto.imprint);
     let result: CoreReading;
     try {
-      result = buildReading({ ...dto, answers }, await this.texts.validated(), dto.locale ?? 'fr');
+      result = buildReading({ ...dto, answers, imprint }, await this.texts.validated(), dto.locale ?? 'fr');
     } catch (e) {
       throw new BadRequestException((e as Error).message);
     }
@@ -49,7 +52,7 @@ export class ReadingsController {
     const reading = await this.prisma.reading.create({
       data: {
         userId: u?.sub ?? null,
-        input: { ...input, answers, consentAt: new Date().toISOString() } as unknown as Prisma.InputJsonValue,
+        input: { ...input, answers, imprint, consentAt: new Date().toISOString() } as unknown as Prisma.InputJsonValue,
         result: result as unknown as Prisma.InputJsonValue,
         oduId: result.odu.id,
         sunSign: SIGNS[result.chart.planets[0].sign].key,

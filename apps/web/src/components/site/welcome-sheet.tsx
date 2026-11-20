@@ -12,7 +12,7 @@ import { cn } from '@/lib/cn';
 
 const KEY = 'ifaolade:welcome-seen';
 /** Pages où la fenêtre gênerait un parcours en cours (REFONTE §11 quater, point 3). */
-const SKIP = ['/connexion', '/inscription', '/console', '/verifier-email', '/mot-de-passe-oublie', '/reinitialiser', '/paiement'];
+const SKIP = ['/connais-toi', '/mon-odu', '/connexion', '/inscription', '/console', '/verifier-email', '/mot-de-passe-oublie', '/reinitialiser', '/paiement'];
 
 /**
  * Fenêtre d'accueil (étape R14) : à la première visite, un demi-cercle translucide monte du bas

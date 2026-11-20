@@ -1,27 +1,28 @@
 'use client';
 
-import { allOdu, oduById, oduFromMarks, oduText, type Mark, type Odu } from '@ona/core';
-import { ArrowLeft, ArrowRight, Hand, RotateCcw, Search } from 'lucide-react';
-import { AnimatePresence, motion } from 'motion/react';
+import { allOdu, defaultLore, oduById, oduFromMarks, oduText, type Mark, type Odu } from '@ona/core';
+import { ArrowLeft, ArrowRight, Hand, HelpCircle, RotateCcw, Search, X } from 'lucide-react';
+import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import { OduElements } from '@/components/odu/odu-elements';
 import { OduGlyph } from '@/components/odu/odu-glyph';
 import { FrenchContentNote } from '@/components/site/blocks';
+import { ImmersiveStage } from '@/components/site/immersive-stage';
 import { Markdown } from '@/components/site/markdown';
 import { Button, buttonClass } from '@/components/ui/button';
-import { Stepper } from '@/components/ui/primitives';
 import { tpl } from '@/i18n';
 import { useI18n } from '@/i18n/client';
 import { apiGet } from '@/lib/api';
-import { pick } from '@/lib/site-data-shared';
-import { useSiteData } from '@/lib/site-data';
 import { cn } from '@/lib/cn';
 import { ODU_DOMAINS, type OduDomain, type OduLecture } from '@/lib/odu-domains';
+import { pick } from '@/lib/site-data-shared';
+import { useSiteData } from '@/lib/site-data';
 
 /*
- * « J'ai déjà mon Odu » (plan, étape 5.9).
- * 1. Tutoriel  2. Carte lumineuse de 8 cercles (touché = II, non touché = I)  3. Domaine  4. Explication guidée.
+ * « J'ai déjà mon Odu » (plan, étape 5.9), en plein écran sans distraction (REFONTE §11 quinquies, étape R16).
+ * 1. Carte lumineuse de 8 cercles seule au centre (touché = II, non touché = I) ; démonstration au premier plan
+ *    au premier passage ; recherche par nom dans un tiroir.  2. Domaine.  3. Explication guidée, une étape à la fois.
  * Rien n'est inventé : les textes par domaine viennent du prêtre (publiés), sinon la page le dit.
  */
 
@@ -30,151 +31,181 @@ const CARD_BG = '#1F2A44';
 const KAOLIN = '#FAF8F4';
 const GLOW = '0 0 0 1px rgba(250,248,244,0.9), 0 0 22px 4px rgba(250,248,244,0.35)';
 const spring = { type: 'spring' as const, stiffness: 320, damping: 26 };
+const DEMO_KEY = 'ifaolade:myodu-demo-seen';
 
 type Leg = [Mark, Mark, Mark, Mark];
 const EMPTY: Leg = [1, 1, 1, 1];
-const strip = (s: string) => s.normalize('NFD').replace(/[̀-̣ͯ]/g, '').toLowerCase().replace(/[^a-zɛɔ]/g, '');
+const strip = (s: string) => s.normalize('NFD').replace(/[̀-̣ͯ]/g, '').toLowerCase().replace(/[^a-zɛɔ]/g, '');
 
-type Phase = 'tuto' | 'card' | 'domain' | 'explain';
+type Phase = 'card' | 'domain' | 'explain';
 
 export function MyOdu() {
   const { d: dict } = useI18n();
   const d = dict.myOdu;
-  const [phase, setPhase] = useState<Phase>('tuto');
+  const [phase, setPhase] = useState<Phase>('card');
   const [right, setRight] = useState<Leg>(EMPTY);
   const [left, setLeft] = useState<Leg>(EMPTY);
   const [odu, setOdu] = useState<Odu | null>(null);
   const [domain, setDomain] = useState<OduDomain | null>(null);
+  const [step, setStep] = useState(0);
+  const [demo, setDemo] = useState(false);
+  const [search, setSearch] = useState(false);
+  const total = d.steps.length;
 
-  const go = (p: Phase) => { setPhase(p); if (typeof window !== 'undefined') window.scrollTo({ top: 0, behavior: 'smooth' }); };
-  const restart = () => { setRight(EMPTY); setLeft(EMPTY); setOdu(null); setDomain(null); go('card'); };
+  // La démonstration s'ouvre d'elle-même au premier passage seulement.
+  useEffect(() => {
+    let seen = false;
+    try { seen = localStorage.getItem(DEMO_KEY) === '1'; } catch { /* rien */ }
+    if (!seen) setDemo(true);
+  }, []);
+  const closeDemo = () => { setDemo(false); try { localStorage.setItem(DEMO_KEY, '1'); } catch { /* rien */ } };
+
+  const restart = () => { setRight(EMPTY); setLeft(EMPTY); setOdu(null); setDomain(null); setStep(0); setPhase('card'); };
+  const progress = phase === 'card' ? 0.15 : phase === 'domain' ? 0.35 : 0.35 + (0.65 * (step + 1)) / total;
+  const fade = { initial: { opacity: 0, y: 10 }, animate: { opacity: 1, y: 0 }, exit: { opacity: 0, y: -10 } };
+
+  const actions = phase === 'card' ? (
+    <div className="flex items-center justify-between gap-3">
+      <div className="flex gap-2">
+        <IconButton label={d.reset} onClick={() => { setRight(EMPTY); setLeft(EMPTY); }}><RotateCcw size={17} /></IconButton>
+        <IconButton label={d.searchOpen} onClick={() => setSearch(true)}><Search size={17} /></IconButton>
+        <IconButton label={d.demoReplay} onClick={() => setDemo(true)}><HelpCircle size={17} /></IconButton>
+      </div>
+      <button type="button" onClick={() => { setOdu(oduFromMarks(right, left)); setPhase('domain'); }}
+        className="inline-flex h-12 items-center gap-2 rounded-full bg-kaolin px-6 text-[15px] font-medium text-night transition-colors hover:bg-kaolin/90">
+        {d.reveal} <ArrowRight size={16} />
+      </button>
+    </div>
+  ) : phase === 'domain' ? (
+    <div className="flex items-center justify-between gap-3">
+      <Button variant="ghost" onClick={restart}><ArrowLeft size={16} /> {d.changeOdu}</Button>
+      <Button size="lg" onClick={() => { setStep(0); setPhase('explain'); }}>{d.start} <ArrowRight size={16} /></Button>
+    </div>
+  ) : (
+    <div className="flex items-center justify-between gap-3">
+      {step > 0
+        ? <Button variant="ghost" onClick={() => setStep(step - 1)}><ArrowLeft size={16} /> {d.prev}</Button>
+        : <Button variant="ghost" onClick={() => setPhase('domain')}><ArrowLeft size={16} /> {d.prev}</Button>}
+      {step < total - 1
+        ? <Button size="lg" onClick={() => setStep(step + 1)}>{d.next} <ArrowRight size={16} /></Button>
+        : <Button variant="secondary" onClick={restart}><RotateCcw size={14} /> {d.restart}</Button>}
+    </div>
+  );
 
   return (
-    <div className="mx-auto max-w-3xl">
+    <ImmersiveStage tone={phase === 'card' ? 'night' : 'light'} progress={progress} actions={actions}>
       <AnimatePresence mode="wait">
-        {phase === 'tuto' && (
-          <motion.div key="tuto" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }}>
-            <Tutorial onDone={() => go('card')} />
-          </motion.div>
-        )}
-
         {phase === 'card' && (
-          <motion.div key="card" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }}>
-            <OduCard right={right} left={left} setRight={setRight} setLeft={setLeft} />
-            <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
-              <div className="flex gap-2">
-                <Button variant="ghost" size="sm" onClick={() => { setRight(EMPTY); setLeft(EMPTY); }}><RotateCcw size={14} /> {d.reset}</Button>
-                <Button variant="ghost" size="sm" onClick={() => go('tuto')}>{d.tutoReplay}</Button>
-              </div>
-              <Button onClick={() => { setOdu(oduFromMarks(right, left)); go('domain'); }}>{d.reveal} <ArrowRight size={16} /></Button>
-            </div>
-            <NameSearch onPick={(o) => { setRight([...o.marks.right] as Leg); setLeft([...o.marks.left] as Leg); }} />
-          </motion.div>
+          <motion.div key="card" {...fade}><OduCard right={right} left={left} setRight={setRight} setLeft={setLeft} /></motion.div>
         )}
-
         {phase === 'domain' && odu && (
-          <motion.div key="domain" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }}>
+          <motion.div key="domain" {...fade}>
             <Revealed odu={odu} />
-            <section className="mt-12 border-t border-border pt-10">
-              <h2 className="text-card-title text-text">{d.domainTitle}</h2>
-              <p className="mt-2 text-[15px] text-text-muted">{d.domainText}</p>
-              <div className="mt-6 grid gap-2.5 sm:grid-cols-2">
-                {ODU_DOMAINS.map((k) => (
-                  <button
-                    key={k} type="button" onClick={() => setDomain(k)} aria-pressed={domain === k}
-                    className={cn('rounded-[var(--radius-md)] border px-4 py-3.5 text-left text-[15px] transition',
-                      domain === k ? 'border-primary bg-primary text-primary-foreground' : 'border-border bg-surface text-text hover:border-text-faint')}
-                  >{d.domains[k]}</button>
-                ))}
-                <button
-                  type="button" onClick={() => setDomain(null)} aria-pressed={domain === null}
-                  className={cn('rounded-[var(--radius-md)] border px-4 py-3.5 text-left text-[15px] transition',
-                    domain === null ? 'border-primary bg-primary-soft text-text' : 'border-border bg-surface text-text-muted hover:border-text-faint')}
-                >{d.domainUnknown}</button>
-              </div>
-              <div className="mt-8 flex flex-wrap justify-between gap-3">
-                <Button variant="secondary" onClick={() => go('card')}><ArrowLeft size={16} /> {d.changeOdu}</Button>
-                <Button onClick={() => go('explain')}>{d.start} <ArrowRight size={16} /></Button>
-              </div>
-            </section>
+            <h2 className="mt-8 text-center text-[20px] text-text">{d.domainTitle}</h2>
+            <div className="mt-5 grid gap-2 sm:grid-cols-2">
+              {ODU_DOMAINS.map((k) => (
+                <button key={k} type="button" onClick={() => setDomain(k)} aria-pressed={domain === k}
+                  className={cn('rounded-[var(--radius-md)] border px-4 py-3 text-left text-[15px] transition',
+                    domain === k ? 'border-primary bg-primary text-primary-foreground' : 'border-border bg-surface text-text hover:border-text-faint')}>
+                  {d.domains[k]}
+                </button>
+              ))}
+              <button type="button" onClick={() => setDomain(null)} aria-pressed={domain === null}
+                className={cn('rounded-[var(--radius-md)] border px-4 py-3 text-left text-[15px] transition',
+                  domain === null ? 'border-primary bg-primary-soft text-text' : 'border-border bg-surface text-text-muted hover:border-text-faint')}>
+                {d.domainUnknown}
+              </button>
+            </div>
           </motion.div>
         )}
-
         {phase === 'explain' && odu && (
-          <motion.div key="explain" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }}>
-            <Explanation odu={odu} domain={domain} onRestart={restart} />
-          </motion.div>
+          <motion.div key="explain" {...fade}><Explanation odu={odu} domain={domain} step={step} /></motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {demo && phase === 'card' && <Demo onClose={closeDemo} />}
+        {search && phase === 'card' && (
+          <SearchDrawer onClose={() => setSearch(false)} onPick={(o) => { setRight([...o.marks.right] as Leg); setLeft([...o.marks.left] as Leg); setSearch(false); }} />
         )}
       </AnimatePresence>
       <p className="sr-only" aria-live="polite">{odu ? odu.name : ''}</p>
-    </div>
+    </ImmersiveStage>
   );
 }
 
-/* ---------------- Tutoriel ---------------- */
+function IconButton({ label, onClick, children }: { label: string; onClick: () => void; children: React.ReactNode }) {
+  return (
+    <button type="button" aria-label={label} title={label} onClick={onClick}
+      className="grid h-12 w-12 place-items-center rounded-full border border-kaolin/25 text-kaolin transition-colors hover:bg-kaolin/10">
+      {children}
+    </button>
+  );
+}
 
-function Tutorial({ onDone }: { onDone: () => void }) {
+/* ---------------- Démonstration au premier plan (comme une vidéo) ---------------- */
+
+function Demo({ onClose }: { onClose: () => void }) {
   const { d: dict } = useI18n();
   const d = dict.myOdu;
+  const reduce = useReducedMotion();
   const [i, setI] = useState(0);
-  const last = i === d.tuto.length - 1;
-  // Carte de démonstration : l'étape 1 allume un cercle, l'étape 2 montre un cercle éteint, l'étape 3 l'éteint à nouveau.
+  // Défile seule, en boucle, comme une courte vidéo.
+  useEffect(() => {
+    const t = setInterval(() => setI((x) => (x + 1) % d.tuto.length), 3200);
+    return () => clearInterval(t);
+  }, [d.tuto.length]);
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [onClose]);
   const demoLit = i === 1 || i === 2;
-  return (
-    <div className="grid items-center gap-10 md:grid-cols-[minmax(0,1fr)_260px]">
-      <div>
-        <p className="text-overline">{tpl(d.stepOf, { n: i + 1, total: d.tuto.length })}</p>
-        <h2 className="text-section mt-4 text-text">{d.tutoTitle}</h2>
-        <AnimatePresence mode="wait">
-          <motion.p key={i} initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -10 }} className="text-body mt-6 min-h-[5.5rem]">
-            {d.tuto[i]}
-          </motion.p>
-        </AnimatePresence>
-        <div className="mt-6 flex gap-1.5" aria-hidden>
-          {d.tuto.map((_, k) => <span key={k} className={cn('h-1 w-8 rounded-full transition', k <= i ? 'bg-primary' : 'bg-bg-subtle')} />)}
-        </div>
-        <div className="mt-8 flex flex-wrap gap-3">
-          {last
-            ? <Button onClick={onDone}>{d.tutoStart} <ArrowRight size={16} /></Button>
-            : <Button onClick={() => setI(i + 1)}>{d.tutoNext} <ArrowRight size={16} /></Button>}
-          {!last && <Button variant="ghost" onClick={onDone}>{d.tutoSkip}</Button>}
-        </div>
-      </div>
 
-      <div className="relative mx-auto w-[220px] rounded-[28px] p-6" style={{ background: CARD_BG }} aria-hidden>
-        <div className="grid grid-cols-2 gap-x-8 gap-y-4">
+  return (
+    <motion.div role="dialog" aria-modal="true" aria-label={d.demoLabel}
+      initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+      className="fixed inset-0 z-[80] flex flex-col items-center justify-center bg-night/92 px-6 text-center text-kaolin backdrop-blur-md">
+      <button type="button" onClick={onClose} aria-label={d.demoGot} className="absolute right-4 top-[max(14px,env(safe-area-inset-top))] grid h-10 w-10 place-items-center rounded-full border border-kaolin/25 sm:right-8 sm:top-6"><X size={18} /></button>
+      <p className="text-[11px] uppercase tracking-[0.22em] text-kaolin/60">{d.demoLabel} · {tpl(d.stepOf, { n: i + 1, total: d.tuto.length })}</p>
+
+      <div className="relative mt-6 w-[min(78vw,300px)] rounded-[32px] p-7 ring-1 ring-kaolin/15" style={{ background: CARD_BG }} aria-hidden>
+        <div className="grid grid-cols-2 justify-items-center gap-x-8 gap-y-5">
           {[0, 1, 2, 3].map((row) => [0, 1].map((col) => {
-            const target = row === 0 && col === 1; // cercle du haut de la jambe droite
+            const target = row === 0 && col === 1;
             const lit = target && demoLit;
             const highlight = i === 0 && col === 1;
             return (
-              <motion.span
-                key={`${row}-${col}`}
-                animate={{ boxShadow: lit ? GLOW : '0 0 0 1px rgba(250,248,244,0.22)', backgroundColor: lit ? KAOLIN : 'rgba(250,248,244,0.04)', scale: highlight ? [1, 1.06, 1] : 1 }}
+              <motion.span key={`${row}-${col}`}
+                animate={{ boxShadow: lit ? GLOW : '0 0 0 1px rgba(250,248,244,0.22)', backgroundColor: lit ? KAOLIN : 'rgba(250,248,244,0.04)', scale: highlight && !reduce ? [1, 1.07, 1] : 1 }}
                 transition={highlight ? { duration: 1.4, repeat: Infinity } : spring}
-                className="relative grid h-12 w-12 place-items-center rounded-full"
-              >
-                <span className="font-mono text-[12px] tracking-[0.2em]" style={{ color: lit ? CARD_BG : 'rgba(250,248,244,0.5)' }}>{lit ? 'II' : 'I'}</span>
+                className="relative grid h-14 w-14 place-items-center rounded-full">
+                <span className="font-mono text-[13px] tracking-[0.2em]" style={{ color: lit ? CARD_BG : 'rgba(250,248,244,0.5)' }}>{lit ? 'II' : 'I'}</span>
                 {target && (i === 1 || i === 3) && (
-                  <motion.span
-                    initial={{ x: 40, y: 40, opacity: 0 }} animate={{ x: 10, y: 14, opacity: [0, 1, 1, 0.9] }}
-                    transition={{ duration: 1.1, ease: 'easeOut' }}
-                    className="absolute grid h-9 w-9 place-items-center rounded-full text-[#9E3B26]"
-                  ><Hand size={26} strokeWidth={1.6} fill="#F6E7E1" /></motion.span>
+                  <motion.span key={`hand-${i}`} initial={{ x: 46, y: 46, opacity: 0 }} animate={{ x: 12, y: 16, opacity: [0, 1, 1, 0.9] }}
+                    transition={{ duration: reduce ? 0 : 1.1, ease: 'easeOut' }}
+                    className="absolute grid h-10 w-10 place-items-center rounded-full text-osun"><Hand size={30} strokeWidth={1.6} fill="#F6E7E1" /></motion.span>
                 )}
               </motion.span>
             );
           }))}
         </div>
-        <div className="mt-4 flex justify-between text-[10px] uppercase tracking-[0.16em]" style={{ color: 'rgba(250,248,244,0.6)' }}>
-          <span>{d.leftLeg}</span><span>{d.rightLeg}</span>
-        </div>
+        <div className="mt-5 flex justify-between text-[10px] uppercase tracking-[0.16em] text-kaolin/60"><span>{d.leftLeg}</span><span>{d.rightLeg}</span></div>
       </div>
-    </div>
+
+      <AnimatePresence mode="wait">
+        <motion.p key={i} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }}
+          className="mt-8 min-h-[4.5rem] max-w-md font-display text-[20px] leading-[1.4] sm:text-[23px]">{d.tuto[i]}</motion.p>
+      </AnimatePresence>
+      <div className="mt-4 flex gap-1.5" aria-hidden>
+        {d.tuto.map((_, k) => <span key={k} className={cn('h-1 w-8 rounded-full transition', k === i ? 'bg-kaolin' : 'bg-kaolin/20')} />)}
+      </div>
+      <button type="button" onClick={onClose} autoFocus className="mt-10 inline-flex h-12 items-center gap-2 rounded-full bg-kaolin px-7 text-[15px] font-medium text-night">{d.demoGot}</button>
+    </motion.div>
   );
 }
 
-/* ---------------- Carte lumineuse des 8 cercles ---------------- */
+/* ---------------- Carte lumineuse des 8 cercles (seule au centre) ---------------- */
 
 function OduCard({ right, left, setRight, setLeft }: { right: Leg; left: Leg; setRight: (l: Leg) => void; setLeft: (l: Leg) => void }) {
   const { d: dict } = useI18n();
@@ -188,13 +219,11 @@ function OduCard({ right, left, setRight, setLeft }: { right: Leg; left: Leg; se
   const preview = oduFromMarks(right, left);
 
   const circle = (leg: 'r' | 'l', row: number) => {
-    const m = (leg === 'r' ? right : left)[row];
-    const lit = m === 2;
+    const lit = (leg === 'r' ? right : left)[row] === 2;
     const legName = leg === 'r' ? d.rightLeg : d.leftLeg;
     return (
       <motion.button
-        key={leg + row}
-        type="button"
+        key={leg + row} type="button"
         onPointerDown={(e) => { e.preventDefault(); toggle(leg, row); }}
         onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(leg, row); } }}
         aria-pressed={lit}
@@ -202,7 +231,7 @@ function OduCard({ right, left, setRight, setLeft }: { right: Leg; left: Leg; se
         whileTap={{ scale: 0.92 }}
         animate={{ boxShadow: lit ? GLOW : '0 0 0 1px rgba(250,248,244,0.22)', backgroundColor: lit ? KAOLIN : 'rgba(250,248,244,0.04)' }}
         transition={spring}
-        className="grid h-[72px] w-[72px] touch-manipulation select-none place-items-center rounded-full outline-none focus-visible:ring-2 focus-visible:ring-[#E08C72] sm:h-20 sm:w-20"
+        className="grid h-[min(17vw,11dvh,84px)] w-[min(17vw,11dvh,84px)] touch-manipulation select-none place-items-center rounded-full outline-none focus-visible:ring-2 focus-visible:ring-[#E08C72]"
       >
         <span className="font-mono text-[15px] tracking-[0.25em]" style={{ color: lit ? CARD_BG : 'rgba(250,248,244,0.55)' }}>{lit ? 'II' : 'I'}</span>
       </motion.button>
@@ -210,53 +239,54 @@ function OduCard({ right, left, setRight, setLeft }: { right: Leg; left: Leg; se
   };
 
   return (
-    <div className="grid items-center gap-8 md:grid-cols-[minmax(0,1fr)_200px]">
-      <div className="mx-auto w-full max-w-[340px] rounded-[32px] px-8 pb-6 pt-8" style={{ background: CARD_BG }}>
-        <div className="grid grid-cols-2 justify-items-center gap-x-6 gap-y-5">
+    <div className="flex flex-col items-center">
+      <div className="w-full max-w-[360px] rounded-[32px] px-8 pb-6 pt-8 ring-1 ring-kaolin/15" style={{ background: CARD_BG }}>
+        <div className="grid grid-cols-2 justify-items-center gap-x-6 gap-y-[min(3dvh,20px)]">
           {[0, 1, 2, 3].map((row) => [circle('l', row), circle('r', row)])}
         </div>
-        <div className="mt-5 flex justify-between text-[11px] uppercase tracking-[0.16em]" style={{ color: 'rgba(250,248,244,0.65)' }}>
-          <span>{d.leftLeg}</span><span>{d.rightLeg}</span>
-        </div>
+        <div className="mt-5 flex justify-between text-[11px] uppercase tracking-[0.16em] text-kaolin/65"><span>{d.leftLeg}</span><span>{d.rightLeg}</span></div>
       </div>
-      <div className="flex flex-col items-center rounded-[var(--radius-lg)] border border-border bg-surface p-6 text-center">
-        <p className="text-overline">{d.live}</p>
-        <div className="mt-4"><OduGlyph right={right} left={left} size="sm" label={preview.name} /></div>
-        <p className="mt-4 text-[15px] text-text">{preview.name}</p>
-        <p className="text-[12px] text-text-faint">{preview.fonName}</p>
-      </div>
+      <p className="mt-6 font-display text-[24px] text-kaolin">{preview.name}</p>
+      <p className="text-[13px] text-kaolin/60">{preview.fonName}</p>
     </div>
   );
 }
 
-function NameSearch({ onPick }: { onPick: (o: Odu) => void }) {
+function SearchDrawer({ onClose, onPick }: { onClose: () => void; onPick: (o: Odu) => void }) {
   const { d: dict } = useI18n();
   const d = dict.myOdu;
   const [q, setQ] = useState('');
   const all = useMemo(() => allOdu(), []);
   const s = strip(q);
-  const hits = s.length < 2 ? [] : all.filter((o) => strip(o.name).includes(s) || strip(o.fonName).includes(s)).slice(0, 6);
+  const hits = s.length < 2 ? [] : all.filter((o) => strip(o.name).includes(s) || strip(o.fonName).includes(s)).slice(0, 8);
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [onClose]);
   return (
-    <div className="mt-10 border-t border-border pt-8">
-      <label htmlFor="odu-name" className="text-[14px] text-text-muted">{d.byName}</label>
-      <div className="relative mt-2">
-        <Search size={16} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-text-faint" />
-        <input
-          id="odu-name" value={q} onChange={(e) => setQ(e.target.value)} placeholder={d.byNamePlaceholder} aria-label={d.byNameLabel}
-          className="h-11 w-full rounded-[var(--radius-md)] border border-border bg-surface pl-10 pr-3 text-[15px] text-text outline-none focus:border-primary"
-        />
-      </div>
-      {hits.length > 0 && (
-        <div className="mt-3 flex flex-wrap gap-2">
+    <motion.div className="fixed inset-0 z-[80] flex items-end" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+      <button type="button" aria-label={dict.wizard.quit} onClick={onClose} className="absolute inset-0 bg-night/50" />
+      <motion.div role="dialog" aria-modal="true" aria-label={d.byName}
+        initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }} transition={{ type: 'spring', stiffness: 300, damping: 32 }}
+        className="relative w-full rounded-t-[28px] bg-surface px-5 pb-[max(20px,env(safe-area-inset-bottom))] pt-5 text-text sm:mx-auto sm:max-w-xl">
+        <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-border-strong" aria-hidden />
+        <label htmlFor="odu-name" className="text-[14px] text-text-muted">{d.byName}</label>
+        <div className="relative mt-2">
+          <Search size={16} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-text-faint" />
+          <input id="odu-name" autoFocus value={q} onChange={(e) => setQ(e.target.value)} placeholder={d.byNamePlaceholder} aria-label={d.byNameLabel}
+            className="h-12 w-full rounded-[var(--radius-md)] border border-border bg-bg pl-10 pr-3 text-[16px] text-text outline-none focus:border-primary" />
+        </div>
+        <div className="mt-3 max-h-[40dvh] space-y-1 overflow-y-auto">
           {hits.map((o) => (
-            <button key={o.id} type="button" onClick={() => { onPick(o); setQ(''); }}
-              className="inline-flex items-center gap-2 rounded-full border border-border-strong bg-surface px-3 py-1.5 text-[13px] text-text hover:border-text-faint">
+            <button key={o.id} type="button" onClick={() => onPick(o)}
+              className="flex w-full items-center gap-3 rounded-[var(--radius-md)] px-3 py-2.5 text-left text-[15px] text-text hover:bg-bg-subtle">
               <OduGlyph right={o.marks.right} left={o.marks.left} size="xs" label={o.name} /> {o.name} <span className="text-text-faint">· {o.fonName}</span>
             </button>
           ))}
         </div>
-      )}
-    </div>
+      </motion.div>
+    </motion.div>
   );
 }
 
@@ -267,27 +297,26 @@ function Revealed({ odu }: { odu: Odu }) {
   return (
     <div className="flex flex-col items-center text-center">
       <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ duration: 0.5 }}
-        className="flex h-60 w-60 items-center justify-center rounded-[32px]" style={{ background: CARD_BG }}>
-        <OduGlyph right={odu.marks.right} left={odu.marks.left} size="md" animate activeColor={KAOLIN} label={odu.name} />
+        className="flex h-36 w-36 items-center justify-center rounded-[28px] sm:h-44 sm:w-44" style={{ background: CARD_BG }}>
+        <OduGlyph right={odu.marks.right} left={odu.marks.left} size="sm" animate activeColor={KAOLIN} label={odu.name} />
       </motion.div>
-      <motion.h2 initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.6 }} className="text-hero mt-8 text-text">{odu.name}</motion.h2>
-      <p className="mt-3 text-[16px] text-text-muted">{tpl(dict.odu.inFa, { name: odu.fonName })} · {odu.isMeji ? dict.odu.meji : dict.odu.omo}</p>
-      <p className="mt-4 flex flex-wrap justify-center gap-2">
-        {oduText(odu, lang).keywords.map((k) => <span key={k} className="rounded-full border border-border-strong px-3 py-1 text-[13px] text-text-muted">{k}</span>)}
+      <h2 className="mt-5 font-display text-[32px] leading-tight text-text sm:text-[40px]">{odu.name}</h2>
+      <p className="mt-1 text-[14px] text-text-muted">{tpl(dict.odu.inFa, { name: odu.fonName })} · {odu.isMeji ? dict.odu.meji : dict.odu.omo}</p>
+      <p className="mt-3 flex flex-wrap justify-center gap-1.5">
+        {oduText(odu, lang).keywords.map((k) => <span key={k} className="rounded-full border border-border-strong px-2.5 py-0.5 text-[12px] text-text-muted">{k}</span>)}
       </p>
     </div>
   );
 }
 
-/* ---------------- Explication guidée ---------------- */
+/* ---------------- Explication guidée, une étape à la fois ---------------- */
 
 interface Detail { essence: string; teaching: string | null }
 
-function Explanation({ odu, domain, onRestart }: { odu: Odu; domain: OduDomain | null; onRestart: () => void }) {
+function Explanation({ odu, domain, step }: { odu: Odu; domain: OduDomain | null; step: number }) {
   const { lang, d: dict, href } = useI18n();
   const site = useSiteData();
   const d = dict.myOdu;
-  const [step, setStep] = useState(0);
   const [detail, setDetail] = useState<Detail | null>(null);
   const [lecture, setLecture] = useState<OduLecture | null>(null);
   const [loaded, setLoaded] = useState(false);
@@ -306,8 +335,9 @@ function Explanation({ odu, domain, onRestart }: { odu: Odu; domain: OduDomain |
   const txt = oduText(odu, lang);
   // Le texte du prêtre est en français : il ne remplace celui du moteur qu'en français.
   const essence = lang === 'fr' && detail?.essence ? detail.essence : txt.essence;
+  // R13 : enseignement de départ si l'API ne répond pas.
+  const teaching = detail?.teaching || defaultLore(odu).teaching;
   const domainLabel = domain ? d.domains[domain].toLowerCase() : '';
-  const total = d.steps.length;
 
   const body = (() => {
     switch (step) {
@@ -366,11 +396,7 @@ function Explanation({ odu, domain, onRestart }: { odu: Odu; domain: OduDomain |
         }
         return <><p className="text-body">{tpl(d.domainPending, { domain: domainLabel })}</p><p className="text-body mt-4">{essence}</p></>;
       case 4:
-        return detail?.teaching && lang === 'fr'
-          ? <Markdown source={detail.teaching} />
-          : detail?.teaching
-            ? <><Markdown source={detail.teaching} /><FrenchContentNote lang={lang} /></>
-            : <p className="text-body">{d.teachingPending}</p>;
+        return <><Markdown source={teaching} /><FrenchContentNote lang={lang} /></>;
       default:
         return (
           <>
@@ -378,7 +404,7 @@ function Explanation({ odu, domain, onRestart }: { odu: Odu; domain: OduDomain |
             <ul className="mt-4 space-y-3">
               {d.limits.map((l) => <li key={l} className="text-body border-l-2 border-accent pl-4">{l}</li>)}
             </ul>
-            <div className="mt-10 rounded-[var(--radius-lg)] border border-border bg-surface p-6">
+            <div className="mt-8 rounded-[var(--radius-lg)] border border-border bg-surface p-6">
               <h3 className="text-card-title text-text">{d.ctaTitle}</h3>
               <p className="mt-2 text-[15px] text-text-muted">{d.ctaText}</p>
               <div className="mt-5 flex flex-wrap gap-3">
@@ -393,33 +419,25 @@ function Explanation({ odu, domain, onRestart }: { odu: Odu; domain: OduDomain |
 
   return (
     <div>
-      <div className="flex items-center gap-5">
-        <span className="grid h-20 w-16 shrink-0 place-items-center rounded-[18px]" style={{ background: CARD_BG }}>
-          <OduGlyph right={odu.marks.right} left={odu.marks.left} size="sm" activeColor={KAOLIN} label={odu.name} />
+      <div className="flex items-center gap-4">
+        <span className="grid h-14 w-11 shrink-0 place-items-center rounded-[14px]" style={{ background: CARD_BG }}>
+          <OduGlyph right={odu.marks.right} left={odu.marks.left} size="xs" activeColor={KAOLIN} label={odu.name} />
         </span>
         <div className="min-w-0">
-          <p className="text-[22px] text-text">{odu.name}</p>
-          <p className="text-[13px] text-text-faint">{odu.fonName}{domain ? ` · ${d.domains[domain]}` : ''}</p>
+          <p className="text-[17px] text-text">{odu.name}</p>
+          <p className="text-[12px] text-text-faint">{odu.fonName}{domain ? ` · ${d.domains[domain]}` : ''}</p>
         </div>
       </div>
-      <div className="mt-8"><Stepper steps={[...d.steps]} current={step} label={tpl(d.stepOf, { n: step + 1, total })} /></div>
       <AnimatePresence mode="wait">
-        <motion.section key={step} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="mt-10 min-h-[16rem]">
-          <h2 className="text-section mb-6 text-text">{d.steps[step]}</h2>
-          {body}
+        <motion.section key={step} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="mt-7">
+          <p className="text-overline">{tpl(d.stepOf, { n: step + 1, total: d.steps.length })}</p>
+          <h2 className="mt-2 font-display text-[28px] leading-tight text-text sm:text-[34px]">{d.steps[step]}</h2>
+          <div className="mt-5">{body}</div>
           {step === 3 && (domain === 'sante' || domain === 'enfants') && (
-            <p className="mt-8 rounded-[var(--radius-md)] border border-info/25 bg-info-soft px-4 py-3 text-[14px] text-text">{d.medical}</p>
+            <p className="mt-6 rounded-[var(--radius-md)] border border-info/25 bg-info-soft px-4 py-3 text-[14px] text-text">{d.medical}</p>
           )}
         </motion.section>
       </AnimatePresence>
-      <div className="mt-12 flex flex-wrap justify-between gap-3 border-t border-border pt-6">
-        {step > 0
-          ? <Button variant="secondary" onClick={() => setStep(step - 1)}><ArrowLeft size={16} /> {d.prev}</Button>
-          : <Button variant="ghost" onClick={onRestart}><RotateCcw size={14} /> {d.restart}</Button>}
-        {step < total - 1
-          ? <Button onClick={() => setStep(step + 1)}>{d.next} <ArrowRight size={16} /></Button>
-          : <Button variant="ghost" onClick={onRestart}><RotateCcw size={14} /> {d.restart}</Button>}
-      </div>
     </div>
   );
 }

@@ -7,6 +7,7 @@ import { birthSignature, Odu } from '../odu/engine';
 import { corePack, fill, oduText, type DomainKey, type FixedKey, type Locale, type SignKey } from '../i18n';
 import type { Element } from '../astro/zodiac';
 import { Dimension, scoreAnswers } from './questionnaire';
+import { classifyImprint, cleanImprint, IMPRINT_LABELS, IMPRINT_TEXT, type Imprint, type ImprintTextKey } from './imprint';
 
 export interface ReadingInput {
   firstName: string;
@@ -19,6 +20,8 @@ export interface ReadingInput {
   longitude?: number | null;
   timezone?: string | null;
   answers: Record<string, string>;
+  /** Empreinte du moment (R15), facultative. */
+  imprint?: Imprint | null;
 }
 
 export interface ReadingSection {
@@ -238,6 +241,7 @@ export function portraitTextCatalog(): PortraitText[] {
     out.push({ key: aspectKey(r), group: 'Aspects', label: `${r.pair[0]}–${r.pair[1]} (${nature})`, default: r.text });
   }
   for (const [k, v] of Object.entries(FIXED)) out.push({ key: k, group: 'Textes fixes', label: k, default: v });
+  for (const [k, v] of Object.entries(IMPRINT_TEXT)) out.push({ key: k, group: 'Empreinte du moment', label: k.replace('imprint.', ''), default: v });
   return out;
 }
 
@@ -316,6 +320,27 @@ export function buildReading(input: ReadingInput, texts: Record<string, string> 
 
   if (asc) {
     sections.push({ key: 'masque', title: SEC.masque, subtitle: fill(SEC.masqueSub, { sign: sName(asc) }), preview: true, paragraphs: [sText(asc, 'asc')] });
+  }
+
+  // R15 : empreinte du moment, visible sans compte, juste après les sections d'aperçu.
+  const imprint = cleanImprint(input.imprint);
+  if (imprint) {
+    const c = classifyImprint(imprint);
+    const IT = (k: ImprintTextKey) => (P ? P.imprint.texts[k] : T(k, IMPRINT_TEXT[k]));
+    const IL = P ? P.imprint.labels : IMPRINT_LABELS;
+    const tense = c.stability === 'agite' && (['controle', 'blocage', 'trahison', 'porteur'] as Dimension[]).some((x) => topDimensions.includes(x));
+    sections.push({
+      key: 'empreinte', title: IL.title,
+      subtitle: fill(IL.sub, { stab: IL[c.stability], appr: IL[c.approach], px: String(imprint.jitterPx), h: (imprint.hesitationMs / 1000).toFixed(1) }),
+      preview: true,
+      paragraphs: [
+        IT(`imprint.${c.stability}`),
+        IT(`imprint.${c.approach}`),
+        ...(c.interrupted ? [IT('imprint.interrupted')] : []),
+        ...(tense ? [IT('imprint.tension')] : []),
+        IT('imprint.note'),
+      ],
+    });
   }
 
   const supported = (r: Rule) => {

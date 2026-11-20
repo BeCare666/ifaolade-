@@ -5,4 +5,5 @@ export * from './astro/zodiac';
 export * from './astro/chart';
 export * from './profile/questionnaire';
 export * from './profile/engine';
+export * from './profile/imprint';
 export * from './i18n';

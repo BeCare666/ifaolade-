@@ -1,3 +1,5 @@
+import type { ImprintLabels, ImprintTextKey } from '../profile/imprint';
+
 /** Langues du moteur (plan, étape 6.4). Le français est la langue source. */
 export type Locale = 'fr' | 'en' | 'yo';
 export const LOCALES: Locale[] = ['fr', 'en', 'yo'];
@@ -49,6 +51,8 @@ export interface CorePack {
   oduComposite: string;
   oduMejiSuffix: string;
   positions: Record<ElementKey, string>;
+  /** Empreinte du moment (R15). */
+  imprint: { texts: Record<ImprintTextKey, string>; labels: ImprintLabels };
 }
 
 export const fill = (tpl: string, vars: Record<string, string>) => tpl.replace(/\{(\w+)\}/g, (_, k) => vars[k] ?? `{${k}}`);

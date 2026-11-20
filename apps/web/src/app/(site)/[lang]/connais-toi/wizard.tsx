@@ -1,16 +1,17 @@
 'use client';
 
-import { birthSignature, buildReading, questionsFor } from '@ona/core';
-import { ArrowLeft, ArrowRight, Clock, Gift, Lock } from 'lucide-react';
+import { birthSignature, buildReading, IMPRINT_HOLD_S, questionsFor, type Imprint } from '@ona/core';
+import { ArrowLeft, ArrowRight } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 import { AnalysisVeil } from '@/components/portrait/analysis-veil';
-import { Container } from '@/components/site/editorial';
+import { FingerprintPad } from '@/components/portrait/fingerprint-pad';
+import { ImmersiveStage } from '@/components/site/immersive-stage';
 import { Button } from '@/components/ui/button';
 import { Checkbox, Field, Input, RadioCards, Select, Textarea } from '@/components/ui/field';
-import { ErrorState, Stepper } from '@/components/ui/primitives';
+import { ErrorState } from '@/components/ui/primitives';
 import { PlaceCombobox, type Place } from '@/components/ui/place-combobox';
 import { tpl } from '@/i18n';
 import { useI18n } from '@/i18n/client';
@@ -38,13 +39,16 @@ export function Wizard() {
   const { lang, d: D, href } = useI18n();
   const d = D.wizard;
   const QUESTIONS = useMemo(() => questionsFor(lang), [lang]);
-  const STEPS = useMemo(() => ['intro', 'identite', 'naissance', ...QUESTIONS.map((q) => q.id)], [QUESTIONS]);
+  // R15 : l'empreinte du moment est la dernière étape, facultative.
+  const STEPS = useMemo(() => ['intro', 'identite', 'naissance', ...QUESTIONS.map((q) => q.id), 'empreinte'], [QUESTIONS]);
   const [dr, setD] = useState<Draft>(EMPTY);
   const [i, setI] = useState(0);
   const [consent, setConsent] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [reading, setReading] = useState(false);
   const [dir, setDir] = useState(1);
+  // Jamais gardée dans le brouillon : elle mesure l'instant présent.
+  const [imprint, setImprint] = useState<Imprint | null>(null);
 
   // Brouillon gardé dans ce navigateur uniquement (si on recharge la page).
   useEffect(() => {
@@ -56,8 +60,7 @@ export function Wizard() {
 
   const step = STEPS[i];
   const question = QUESTIONS.find((q) => q.id === step);
-  const labels: Record<string, string> = { identite: d.steps.identite, naissance: d.steps.naissance };
-  const progressSteps = STEPS.slice(1).map((s) => labels[s] ?? d.steps.questions);
+  const progress = i / (STEPS.length - 1);
 
   const stepError = useMemo(() => {
     if (step === 'intro') return consent ? null : d.errors.consent;
@@ -77,7 +80,7 @@ export function Wizard() {
   const go = (delta: number) => { setError(null); setDir(delta); setI((x) => Math.max(0, Math.min(STEPS.length - 1, x + delta))); };
   const next = () => {
     if (stepError) { setError(stepError); return; }
-    if (i === STEPS.length - 1) submit();
+    if (i === STEPS.length - 1) submit(imprint);
     else go(1);
   };
 
@@ -94,20 +97,20 @@ export function Wizard() {
     answers: dr.answers,
   });
 
-  async function submit() {
+  async function submit(imp: Imprint | null) {
     setReading(true);
     const started = Date.now();
     // REFONTE R12 : la vue d'analyse reste au moins 6 secondes, même si le calcul est plus rapide.
     const wait = () => new Promise((r) => setTimeout(r, Math.max(0, 6200 - (Date.now() - started))));
     try {
-      const res = await apiSend<{ id: string }>('/readings', { ...input(), consent: true, locale: lang }, 'POST', token);
+      const res = await apiSend<{ id: string }>('/readings', { ...input(), ...(imp ? { imprint: imp } : {}), consent: true, locale: lang }, 'POST', token);
       try { localStorage.setItem('ifaolade:last-reading', res.id); } catch { /* rien */ }
       await wait();
       router.replace(href(`/connais-toi/portrait/${res.id}`));
     } catch (e) {
       if (e instanceof ApiError && e.status === 0) {
         // API injoignable : le portrait est calculé ici même, sans être enregistré.
-        try { sessionStorage.setItem(LOCAL_READING_KEY, JSON.stringify(buildReading(input(), {}, lang))); } catch { /* rien */ }
+        try { sessionStorage.setItem(LOCAL_READING_KEY, JSON.stringify(buildReading({ ...input(), imprint: imp }, {}, lang))); } catch { /* rien */ }
         await wait();
         router.replace(href('/connais-toi/portrait/local'));
       } else {
@@ -117,14 +120,23 @@ export function Wizard() {
     }
   }
 
-  if (reading) return <ReadingScreen dr={dr} />;
-  const icons = [Clock, Gift, Lock];
+  if (reading) return <ReadingScreen dr={dr} withImprint={!!imprint} />;
+  const isLast = i === STEPS.length - 1;
+  const canNext = step === 'intro' || step === 'identite' || step === 'naissance' || question?.type === 'text' || !!dr.answers[step] || (step === 'empreinte' && !!imprint);
 
+  // REFONTE R16 : plein écran, une seule question, actions toujours au même endroit.
   return (
-    <Container className="py-12 lg:py-20">
-      <div className="mx-auto max-w-2xl">
-        {step !== 'intro' && <div className="mb-12"><Stepper steps={progressSteps} current={i - 1} label={tpl(d.step, { n: i, total: progressSteps.length })} /></div>}
-
+    <ImmersiveStage
+      progress={step === 'intro' ? undefined : progress}
+      actions={
+        <div className="flex items-center justify-between gap-4">
+          {i > 0 ? <Button variant="ghost" onClick={() => go(-1)}><ArrowLeft size={16} /> {d.back}</Button> : <span />}
+          {step === 'empreinte' && !imprint
+            ? <Button variant="secondary" size="lg" onClick={() => submit(null)}>{d.imprintSkip}</Button>
+            : canNext && <Button size="lg" onClick={next}>{step === 'intro' ? d.start : isLast ? d.reveal : d.next} <ArrowRight size={16} /></Button>}
+        </div>
+      }
+    >
         <AnimatePresence mode="wait" custom={dir}>
           <motion.div
             key={step}
@@ -135,15 +147,9 @@ export function Wizard() {
             {step === 'intro' && (
               <div>
                 <p className="text-overline">{d.overline}</p>
-                <h1 className="text-hero mt-5 text-text">{d.title}</h1>
-                <p className="text-body mt-7">{d.intro}</p>
-                <ul className="mt-10 grid gap-4 sm:grid-cols-3">
-                  {d.points.map((t, k) => {
-                    const I = icons[k];
-                    return <li key={t} className="flex items-center gap-3 text-[14px] text-text"><span className="flex h-9 w-9 items-center justify-center rounded-full border border-border-strong text-text-muted"><I size={16} strokeWidth={1.5} /></span>{t}</li>;
-                  })}
-                </ul>
-                <div className="mt-12 rounded-[var(--radius-lg)] border border-border bg-surface p-6">
+                <h1 className="text-section mt-4 text-text">{d.title}</h1>
+                <p className="mt-5 text-[16px] leading-[1.75] text-text-muted">{d.intro}</p>
+                <div className="mt-8 rounded-[var(--radius-lg)] border border-border bg-surface p-6">
                   <Checkbox checked={consent} onChange={setConsent} label={d.consent} description={d.consentHint} />
                   <p className="mt-4 text-[12px] text-text-faint">
                     {d.privacy.split('{link}')[0]}<Link href={href('/confidentialite')} className="underline underline-offset-4">{d.privacyLink}</Link>{d.privacy.split('{link}')[1]}
@@ -207,42 +213,40 @@ export function Wizard() {
                 <p className="mt-2 text-right text-[12px] tabular-nums text-text-faint">{(dr.answers[question.id] ?? '').length} / 400</p>
               </StepFrame>
             )}
+            {step === 'empreinte' && (
+              <StepFrame title={d.imprintTitle} hint={tpl(d.imprintHint, { s: String(IMPRINT_HOLD_S) })}>
+                <FingerprintPad done={!!imprint} onDone={setImprint} />
+              </StepFrame>
+            )}
           </motion.div>
         </AnimatePresence>
 
-        {error && <div className="mt-8"><ErrorState title={d.errors.missingTitle} description={error} /></div>}
-
-        <div className="mt-12 flex items-center justify-between gap-4 border-t border-border pt-8">
-          {i > 0 ? <Button variant="ghost" onClick={() => go(-1)}><ArrowLeft size={16} /> {d.back}</Button> : <span />}
-          {(step === 'intro' || step === 'identite' || step === 'naissance' || question?.type === 'text' || dr.answers[step]) && (
-            <Button size="lg" onClick={next}>{step === 'intro' ? d.start : i === STEPS.length - 1 ? d.reveal : d.next} <ArrowRight size={16} /></Button>
-          )}
-        </div>
-      </div>
-    </Container>
+        {error && <div className="mt-6"><ErrorState title={d.errors.missingTitle} description={error} /></div>}
+    </ImmersiveStage>
   );
 }
 
 function StepFrame({ title, hint, children }: { title: string; hint?: string; children: React.ReactNode }) {
   return (
     <div>
-      <h2 className="text-[30px] font-normal leading-[1.1] tracking-[-0.03em] text-text sm:text-[38px]">{title}</h2>
-      {hint && <p className="mt-4 text-[15px] leading-[1.75] text-text-muted">{hint}</p>}
-      <div className="mt-10">{children}</div>
+      <h2 className="text-[26px] font-normal leading-[1.12] tracking-[-0.03em] text-text sm:text-[36px]">{title}</h2>
+      {hint && <p className="mt-3 text-[15px] leading-[1.7] text-text-muted">{hint}</p>}
+      <div className="mt-7 sm:mt-9">{children}</div>
     </div>
   );
 }
 
 /** Écran de lecture : l'ọ̀pẹ̀lẹ̀ montre la signature calculée (jamais présentée comme une divination). */
-function ReadingScreen({ dr }: { dr: Draft }) {
+function ReadingScreen({ dr, withImprint }: { dr: Draft; withImprint: boolean }) {
   const { d } = useI18n();
   const odu = useMemo(
     () => birthSignature({ firstName: dr.firstName, lastName: dr.lastName, birthDate: dr.birthDate, birthTime: dr.timeUnknown ? null : dr.birthTime }),
     [dr],
   );
   return (
-    <Container className="flex min-h-[70vh] flex-col items-center justify-center py-20 text-center">
-      <AnalysisVeil name={dr.firstName} right={odu.marks.right} left={odu.marks.left} steps={[...d.wizard.analysisSteps]} title={d.wizard.analysisTitle} live={d.wizard.analysisLive} />
-    </Container>
+    <AnalysisVeil
+      name={dr.firstName} right={odu.marks.right} left={odu.marks.left} title={d.wizard.analysisTitle} live={d.wizard.analysisLive}
+      steps={withImprint ? [...d.wizard.analysisSteps.slice(0, 3), d.wizard.imprintAnalysis, ...d.wizard.analysisSteps.slice(3)] : [...d.wizard.analysisSteps]}
+    />
   );
 }
